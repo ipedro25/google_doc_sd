@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect width="800" height="400" fill="#f3f8ff"/>
+  <rect x="28" y="28" width="744" height="344" rx="16" fill="#fff" stroke="#cfe0ff" />
+  <text x="48" y="80" font-family="Plus Jakarta Sans, Arial" font-size="28" fill="#003289">Imagem de Exemplo 2</text>
+</svg>

@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Dashboard | JI Sync</title>
+<link rel="stylesheet" href="/css/global-font.css" />
+<style>
+  :root {
+    --primary:        #003289;
+    --primary-dim:    #0D47B5;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --error:          #ba1a1a;
+    --tertiary:       #6d5e00;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,250,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 32px; height: 60px;
+  }
+  .topbar-brand {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--on-surface);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .topbar-search {
+    flex: 1; max-width: 520px; margin: 0 auto;
+    position: relative;
+  }
+  .topbar-search input {
+    width: 100%;
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    padding: 9px 16px 9px 42px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .topbar-search input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .topbar-search .search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--outline); font-size: 20px; pointer-events: none;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .avatar:hover { opacity: 0.85; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── USER MENU ── */
+  .topbar-actions { position: relative; }
+  .user-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    display: none;
+    animation: menuIn 0.15s ease;
+  }
+  .user-menu.open { display: block; }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .user-menu-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+  }
+  .user-menu-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--label); font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .user-menu-name {
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+  }
+  .user-menu-role {
+    font-size: 11px; color: var(--outline);
+    font-family: var(--sans);
+  }
+  .user-menu-divider {
+    height: 1px; background: var(--outline-var); margin: 0 12px;
+  }
+  .user-menu-item {
+    width: 100%; padding: 10px 16px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--sans); font-size: 13px;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+    text-align: left;
+  }
+  .user-menu-item:last-child { border-radius: 0 0 8px 8px; margin-bottom: 4px; }
+  .user-menu-item:hover { background: var(--surface-low); color: var(--on-surface); }
+  .user-menu-item.danger { color: #ba1a1a; }
+  .user-menu-item.danger:hover { background: #ffdad6; }
+
+  /* ── HERO STRIP ── */
+  .hero {
+    background: var(--primary);
+    padding: 40px 32px 36px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px;
+  }
+  .hero-text h1 {
+    font-family: var(--serif);
+    font-size: 36px; font-weight: 400;
+    color: var(--on-primary);
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .hero-text p {
+    color: rgba(255,255,255,0.75);
+    font-size: 14px; line-height: 1.5;
+    max-width: 420px;
+  }
+  .hero-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #ffffff;
+    color: var(--primary);
+    border: none; border-radius: 2px;
+    padding: 12px 24px;
+    font-family: var(--label);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .hero-btn:hover { opacity: 0.92; }
+  .hero-btn:active { transform: scale(0.98); }
+
+  /* ── QUICK NEW ── */
+  .quick-section {
+    padding: 32px 32px 0;
+    border-bottom: 1px solid var(--outline-var);
+    background: var(--surface-low);
+  }
+  .section-label {
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--outline);
+    margin-bottom: 16px;
+  }
+  .quick-grid {
+    display: flex; gap: 12px; overflow-x: auto;
+    padding-bottom: 24px;
+    scrollbar-width: none;
+  }
+  .quick-grid::-webkit-scrollbar { display: none; }
+  .quick-card {
+    flex-shrink: 0;
+    width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
+    text-align: left;
+  }
+  .quick-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .quick-card-thumb {
+    height: 96px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+  }
+  .quick-card-thumb .material-symbols-outlined {
+    font-size: 36px;
+  }
+  .thumb-word   { background: #e8f0fe; color:  #0D47B5 }
+  .thumb-excel  { background: #e6f4ea; color: #1a7340; }
+  .thumb-blank  { background: var(--surface-low); color: var(--outline); }
+  .quick-card-label {
+    padding: 10px 12px;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .quick-card-sub {
+    padding: 0 12px 10px;
+    font-size: 11px;
+    color: var(--outline);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 32px; flex: 1; }
+
+  .docs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+  }
+  .view-tabs { display: flex; gap: 2px; }
+  .view-tab {
+    background: none; border: none; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--outline);
+    transition: background 0.15s, color 0.15s;
+  }
+  .view-tab.active, .view-tab:hover {
+    background: var(--surface-high);
+    color: var(--on-surface);
+  }
+
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    background: none;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface-var);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .filter-chip.active, .filter-chip:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
+  }
+
+  /* ── GRID VIEW ── */
+  .docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .doc-card {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .doc-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+    transform: translateY(-2px);
+  }
+  .doc-card:hover .doc-card-actions { opacity: 1; }
+  .doc-preview {
+    height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+    position: relative; overflow: hidden;
+  }
+  .doc-preview-word  { background: #f0f4ff; }
+  .doc-preview-excel { background: #f0f9f2; }
+  .doc-preview-lines {
+    position: absolute; inset: 12px 16px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .doc-line {
+    height: 6px; border-radius: 2px;
+    background: rgba(51,102,204,0.15);
+  }
+  .doc-line-dark { background: rgba(51,102,204,0.28); }
+  .doc-line-short { width: 60%; }
+  .doc-line-med   { width: 80%; }
+  .doc-line-full  { width: 100%; }
+
+  .doc-grid-lines {
+    position: absolute; inset: 8px;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .doc-grid-cell {
+    background: rgba(26,115,64,0.12);
+    border-radius: 1px;
+  }
+  .doc-grid-cell.header { background: rgba(26,115,64,0.28); }
+
+  .doc-card-meta {
+    padding: 12px 14px;
+  }
+  .doc-card-name {
+    font-family: var(--sans);
+    font-size: 13px; font-weight: 500;
+    color: var(--on-surface);
+    margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-card-date {
+    font-size: 11px;
+    color: var(--outline);
+  }
+  .doc-card-editor {
+    font-size: 11px;
+    color: var(--outline);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 2px;
+  }
+  .doc-card-editor .material-symbols-outlined { font-size: 12px; }
+
+  /* ── HISTORY MODAL ── */
+  .history-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--surface-high);
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 600;
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name {
+    font-size: 13px; font-weight: 500; color: var(--on-surface);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-time { font-size: 11px; color: var(--outline); }
+  .history-empty {
+    text-align: center; padding: 24px 0; color: var(--outline); font-size: 13px;
+  }
+  .doc-type-badge {
+    position: absolute; top: 8px; left: 8px;
+    padding: 2px 8px; border-radius: 2px;
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .badge-word  { background: #0D47B5; color: #ffffff; }
+  .badge-excel { background: #1a7340; color: #fff; }
+  .doc-card-actions {
+    position: absolute; top: 8px; right: 8px;
+    opacity: 0; transition: opacity 0.2s;
+    display: flex; gap: 4px;
+  }
+  .doc-action-btn {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--on-surface-var);
+    font-size: 16px;
+    transition: background 0.15s;
+  }
+  .doc-action-btn:hover { background: #fff; color: var(--primary); }
+
+  /* ── LIST VIEW ── */
+  .docs-list { display: none; }
+  .docs-list.active { display: block; }
+  .docs-grid.active { display: grid; }
+  .docs-grid.hidden  { display: none; }
+
+  .list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    font-family: var(--label);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--outline);
+  }
+  .list-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .list-row:hover { background: var(--surface-low); }
+  .list-row:last-child { border-bottom: none; }
+  .list-name {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .list-icon {
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .list-icon-word  { background: #e8f0fe; color: #0D47B5 }
+  .list-icon-excel { background: #e6f4ea; color: #1a7340; }
+  .list-meta {
+    font-size: 13px; color: var(--on-surface-var);
+  }
+  .list-actions {
+    display: flex; gap: 4px; justify-content: flex-end;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .list-row:hover .list-actions { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px 32px; text-align: center;
+    color: var(--outline);
+  }
+  .empty-state .material-symbols-outlined { font-size: 64px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--serif); font-size: 22px; color: var(--on-surface-var); margin-bottom: 8px; }
+  .empty-state p  { font-size: 14px; max-width: 300px; line-height: 1.6; }
+
+  /* ── CONFIRM MODAL ── */
+  .confirm-modal {
+    text-align: center;
+    max-width: 380px;
+  }
+  .confirm-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #ffdad6;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .confirm-icon .material-symbols-outlined {
+    font-size: 32px; color: #ba1a1a;
+  }
+  .confirm-modal h2 {
+    font-size: 20px; margin-bottom: 10px;
+  }
+  .confirm-message {
+    font-family: var(--sans);
+    font-size: 14px; color: var(--on-surface-var);
+    line-height: 1.6; margin-bottom: 4px;
+  }
+  .confirm-doc-name {
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 12px 0 0;
+    display: block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .btn-danger {
+    padding: 10px 24px; border-radius: 2px;
+    background: #ba1a1a; border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: #ffffff; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-danger:hover { background: #93000a; }
+  .btn-danger:active { transform: scale(0.98); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(27,28,29,0.4);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 100%; max-width: 440px;
+    padding: 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal h2 {
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .modal-field { margin-bottom: 20px; }
+  .modal-label {
+    display: block;
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--on-surface-var);
+    margin-bottom: 8px;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .modal-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .modal-type-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .modal-type-option {
+    border: 2px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .modal-type-option:hover { border-color: var(--primary); }
+  .modal-type-option.selected { border-color: var(--primary); background: #f0f4ff; }
+  .modal-type-option .material-symbols-outlined { font-size: 32px; display: block; margin-bottom: 8px; }
+  .modal-type-option.word-opt  .material-symbols-outlined { color: #0D47B5 }
+  .modal-type-option.excel-opt .material-symbols-outlined { color: #1a7340; }
+  .modal-type-label { font-size: 13px; font-weight: 500; color: var(--on-surface); }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+  .btn-ghost {
+    padding: 10px 20px; border-radius: 2px;
+    background: none; border: 1px solid var(--outline-var);
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface-var); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: var(--surface-high); }
+  .btn-primary {
+    padding: 10px 24px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--primary-dim); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--on-surface); color: var(--surface);
+    padding: 12px 24px; border-radius: 24px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 300;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease both; }
+  .delay-1 { animation-delay: 0.05s; }
+  .delay-2 { animation-delay: 0.10s; }
+  .delay-3 { animation-delay: 0.15s; }
+  .delay-4 { animation-delay: 0.20s; }
+  .delay-5 { animation-delay: 0.25s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .hero { flex-direction: column; align-items: flex-start; }
+    .topbar-search { display: none; }
+    .docs-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .list-header, .list-row { grid-template-columns: 2fr 1fr 60px; }
+    .list-header .col-owner, .list-row .col-owner { display: none; }
+    .main, .quick-section, .hero { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <a class="topbar-brand" href="#">JI Sync</a>
+  <div class="topbar-search">
+    <span class="material-symbols-outlined search-icon">search</span>
+    <input type="text" id="searchInput" placeholder="Pesquisar documentos..." oninput="filterDocs()"/>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="projects.html" title="Projectos" style="text-decoration:none;display:flex;align-items:center;justify-content:center">
+      <span class="material-symbols-outlined" style="font-size:20px">folder</span>
+    </a>
+    <button class="icon-btn" title="Notificações">
+      <span class="material-symbols-outlined" style="font-size:20px">notifications</span>
+    </button>
+    <button class="icon-btn" title="Definições">
+      <span class="material-symbols-outlined" style="font-size:20px">settings</span>
+    </button>
+    <div class="avatar" title="Perfil" id="avatarBtn" onclick="toggleUserMenu()">VM</div>
+  <!-- USER MENU -->
+  <div class="user-menu" id="userMenu">
+    <div class="user-menu-header">
+      <div class="user-menu-avatar" id="menuAvatar">VM</div>
+      <div>
+        <div class="user-menu-name" id="menuName">Utilizador</div>
+        <div class="user-menu-role">Membro</div>
+      </div>
+    </div>
+    <div class="user-menu-divider"></div>
+    <button class="user-menu-item" onclick="window.location.href='projects.html'">
+      <span class="material-symbols-outlined" style="font-size:18px">folder</span>
+      Projectos
+    </button>
+    <button class="user-menu-item" onclick="window.location.href='register.html'">
+      <span class="material-symbols-outlined" style="font-size:18px">person_add</span>
+      Novo registo
+    </button>
+    <button class="user-menu-item danger" onclick="logout()">
+      <span class="material-symbols-outlined" style="font-size:18px">logout</span>
+      Terminar sessão
+    </button>
+  </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero fade-up">
+  <div class="hero-text">
+    <h1 id="heroGreeting">Bom dia.</h1>
+    <p>Retome onde parou ou crie um novo documento. Todos os seus ficheiros estão sincronizados em tempo real.</p>
+  </div>
+  <button class="hero-btn" onclick="openModal()">
+    <span class="material-symbols-outlined" style="font-size:18px">add</span>
+    Novo documento
+  </button>
+</div>
+
+<!-- QUICK TEMPLATES -->
+<section class="quick-section fade-up delay-1">
+  <div class="section-label">Criar novo</div>
+  <div class="quick-grid">
+    <button class="quick-card" onclick="openModal('word')">
+      <div class="quick-card-thumb thumb-word">
+        <span class="material-symbols-outlined">article</span>
+      </div>
+      <div class="quick-card-label">Documento em branco</div>
+      <div class="quick-card-sub">Word</div>
+    </button>
+    <button class="quick-card" onclick="openModal('excel')">
+      <div class="quick-card-thumb thumb-excel">
+        <span class="material-symbols-outlined">table_chart</span>
+      </div>
+      <div class="quick-card-label">Folha de cálculo</div>
+      <div class="quick-card-sub">Excel</div>
+    </button>
+    <button class="quick-card" onclick="openModal('word')">
+      <div class="quick-card-thumb thumb-blank">
+        <span class="material-symbols-outlined">description</span>
+      </div>
+      <div class="quick-card-label">Relatório</div>
+      <div class="quick-card-sub">Modelo Word</div>
+    </button>
+    <button class="quick-card" onclick="openModal('excel')">
+      <div class="quick-card-thumb thumb-excel">
+        <span class="material-symbols-outlined">analytics</span>
+      </div>
+      <div class="quick-card-label">Análise de dados</div>
+      <div class="quick-card-sub">Modelo Excel</div>
+    </button>
+  </div>
+</section>
+
+<!-- MAIN DOCS AREA -->
+<main class="main">
+  <div class="docs-header fade-up delay-2">
+    <div>
+      <div class="section-label" style="margin-bottom:4px">Os meus documentos</div>
+      <div style="font-size:13px;color:var(--outline)" id="docCount">6 documentos</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <div class="filter-bar">
+        <button class="filter-chip active" onclick="filterByType(this,'all')">Todos</button>
+        <button class="filter-chip" onclick="filterByType(this,'word')">
+          <span class="material-symbols-outlined" style="font-size:14px">article</span> Word
+        </button>
+        <button class="filter-chip" onclick="filterByType(this,'excel')">
+          <span class="material-symbols-outlined" style="font-size:14px">table_chart</span> Excel
+        </button>
+      </div>
+      <div class="view-tabs">
+        <button class="view-tab active" id="gridBtn" onclick="setView('grid')" title="Grelha">
+          <span class="material-symbols-outlined" style="font-size:20px">grid_view</span>
+        </button>
+        <button class="view-tab" id="listBtn" onclick="setView('list')" title="Lista">
+          <span class="material-symbols-outlined" style="font-size:20px">list</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div class="docs-grid active fade-up delay-3" id="docsGrid"></div>
+
+  <!-- LIST VIEW -->
+  <div class="docs-list" id="docsList">
+    <div class="list-header">
+      <div>Nome</div>
+      <div class="col-owner">Proprietário</div>
+      <div>Modificado</div>
+      <div></div>
+    </div>
+    <div id="docsListBody"></div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" id="emptyState">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h3>Nenhum documento encontrado</h3>
+    <p>Tente outro termo de pesquisa ou crie um novo documento.</p>
+  </div>
+</main>
+
+<!-- MODAL NOVO DOCUMENTO -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2>Novo documento</h2>
+    <div class="modal-field">
+      <label class="modal-label">Tipo de documento</label>
+      <div class="modal-type-grid">
+        <div class="modal-type-option word-opt selected" id="typeWord" onclick="selectType('word')">
+          <span class="material-symbols-outlined">article</span>
+          <span class="modal-type-label">Documento Word</span>
+        </div>
+        <div class="modal-type-option excel-opt" id="typeExcel" onclick="selectType('excel')">
+          <span class="material-symbols-outlined">table_chart</span>
+          <span class="modal-type-label">Folha Excel</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" for="docName">Nome do documento</label>
+      <input class="modal-input" type="text" id="docName" placeholder="Ex: Relatório de análise distribuída"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="createDocument()">Criar documento</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmOverlay" onclick="closeConfirmOutside(event)">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon" id="confirmIcon">
+      <span class="material-symbols-outlined">delete</span>
+    </div>
+    <h2 id="confirmTitle">Eliminar documento</h2>
+    <p id="confirmMessage" class="confirm-message">Tens a certeza que queres eliminar este documento?</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-danger" id="confirmBtn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="historyOverlay" onclick="closeHistoryOutside(event)">
+  <div class="modal" style="max-width:440px">
+    <h2 style="margin-bottom:4px" id="historyTitle">Histórico de edições</h2>
+    <p class="confirm-message" style="margin-bottom:16px;text-align:left">Quem editou este documento, e quando.</p>
+    <div id="historyList" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;">
+      <!-- preenchido via JS -->
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeHistory()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ──
+  const API = 'http://localhost:3000';
+  const token = localStorage.getItem('ji_token');
+
+  // ── DATA ──
+  let docs = [];
+
+  let currentFilter = 'all';
+  let currentView   = 'grid';
+  let selectedType  = 'word';
+
+  // ── API HELPERS ──
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  async function loadDocuments() {
+    try {
+      showLoading(true);
+      const result = await apiFetch('/documents?page=1&limit=100');
+      docs = (result.data || []).map(d => ({
+        id:    d.id,
+        name:  d.name,
+        type:  d.word_html !== null ? 'word' : 'excel',
+        owner: 'Utilizador',
+        date:  formatDate(d.updated_at || d.created_at),
+        lastEditor:  d.last_edited_by || null,
+        lastEditAt:  d.last_edited_at ? formatDate(d.last_edited_at) : null,
+      }));
+      // Sincroniza localStorage com a BD — remove documentos apagados
+      localStorage.setItem('ji_docs', JSON.stringify(docs));
+      render();
+    } catch (err) {
+      console.warn('[Dashboard] API indisponível:', err.message);
+      // Só usa localStorage se a API estiver completamente inacessível
+      docs = JSON.parse(localStorage.getItem('ji_docs') || '[]');
+      render();
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function saveToDocs(doc) {
+    // Persiste localmente como fallback
+    const local = JSON.parse(localStorage.getItem('ji_docs') || '[]');
+    const idx   = local.findIndex(d => d.id === doc.id);
+    if (idx >= 0) local[idx] = doc; else local.unshift(doc);
+    localStorage.setItem('ji_docs', JSON.stringify(local));
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    const now  = new Date();
+    const diff = now - d;
+    if (diff < 0)          return d.toLocaleString('pt', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    if (diff < 60000)      return 'Agora mesmo';
+    if (diff < 3600000)    return `Há ${Math.floor(diff / 60000)} min`;
+    if (diff < 86400000)   return `Hoje, ${d.toLocaleTimeString('pt', { hour:'2-digit', minute:'2-digit' })}`;
+    if (diff < 172800000)  return `Ontem, ${d.toLocaleTimeString('pt', { hour:'2-digit', minute:'2-digit' })}`;
+    if (diff < 604800000)  return `${Math.floor(diff / 86400000)} dias atrás`;
+    return d.toLocaleDateString('pt', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function showLoading(show) {
+    document.getElementById('docsGrid').style.opacity = show ? '0.4' : '1';
+  }
+
+  // ── RENDER ──
+  function getFiltered() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    return docs.filter(d => {
+      const matchType   = currentFilter === 'all' || d.type === currentFilter;
+      const matchSearch = d.name.toLowerCase().includes(q);
+      return matchType && matchSearch;
+    });
+  }
+
+  function renderGrid(data) {
+    const grid = document.getElementById('docsGrid');
+    grid.innerHTML = data.map((d, i) => `
+      <div class="doc-card fade-up" style="animation-delay:${i * 0.04}s" onclick="openDoc('${d.id}','${d.type}')">
+        <div class="doc-preview doc-preview-${d.type}">
+          ${d.type === 'word' ? `
+            <div class="doc-preview-lines">
+              <div class="doc-line doc-line-dark doc-line-med"></div>
+              <div class="doc-line doc-line-full"></div>
+              <div class="doc-line doc-line-full"></div>
+              <div class="doc-line doc-line-short"></div>
+              <div class="doc-line doc-line-full"></div>
+              <div class="doc-line doc-line-med"></div>
+            </div>` : `
+            <div class="doc-grid-lines">
+              ${Array(16).fill(0).map((_,j) => `<div class="doc-grid-cell${j<4?' header':''}"></div>`).join('')}
+            </div>`}
+          <span class="doc-type-badge badge-${d.type}">${d.type}</span>
+          <div class="doc-card-actions">
+            <button class="doc-action-btn" onclick="event.stopPropagation();openHistory('${d.id}','${d.name}')" title="Histórico de edições">
+              <span class="material-symbols-outlined" style="font-size:14px">history</span>
+            </button>
+            <button class="doc-action-btn" onclick="event.stopPropagation();renameDoc('${d.id}')" title="Renomear">
+              <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+            </button>
+            <button class="doc-action-btn" onclick="event.stopPropagation();deleteDoc('${d.id}')" title="Eliminar">
+              <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+            </button>
+          </div>
+        </div>
+        <div class="doc-card-meta">
+          <div class="doc-card-name" title="${d.name}">${d.name}</div>
+          <div class="doc-card-date">${d.date}</div>
+          ${d.lastEditor ? `<div class="doc-card-editor" title="Última edição de ${d.lastEditor}">
+            <span class="material-symbols-outlined">edit_note</span>${d.lastEditor}
+          </div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function renderList(data) {
+    document.getElementById('docsListBody').innerHTML = data.map(d => `
+      <div class="list-row" onclick="openDoc('${d.id}','${d.type}')">
+        <div class="list-name">
+          <div class="list-icon list-icon-${d.type}">
+            <span class="material-symbols-outlined" style="font-size:18px">${d.type==='word'?'article':'table_chart'}</span>
+          </div>
+          ${d.name}
+        </div>
+        <div class="list-meta col-owner">${d.lastEditor || d.owner}</div>
+        <div class="list-meta">${d.date}</div>
+        <div class="list-actions">
+          <button class="doc-action-btn" onclick="event.stopPropagation();openHistory('${d.id}','${d.name}')" title="Histórico de edições">
+            <span class="material-symbols-outlined" style="font-size:14px">history</span>
+          </button>
+          <button class="doc-action-btn" onclick="event.stopPropagation();renameDoc('${d.id}')" title="Renomear">
+            <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+          </button>
+          <button class="doc-action-btn" onclick="event.stopPropagation();deleteDoc('${d.id}')" title="Eliminar">
+            <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  function render() {
+    const data = getFiltered();
+    document.getElementById('docCount').textContent = `${data.length} documento${data.length!==1?'s':''}`;
+    renderGrid(data);
+    renderList(data);
+    document.getElementById('emptyState').style.display = data.length === 0 ? 'flex' : 'none';
+  }
+
+  // ── FILTER ──
+  function filterByType(btn, type) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = type;
+    render();
+  }
+  function filterDocs() { render(); }
+
+  // ── VIEW ──
+  function setView(v) {
+    currentView = v;
+    document.getElementById('docsGrid').classList.toggle('active', v === 'grid');
+    document.getElementById('docsGrid').classList.toggle('hidden',  v !== 'grid');
+    document.getElementById('docsList').classList.toggle('active',  v === 'list');
+    document.getElementById('gridBtn').classList.toggle('active', v === 'grid');
+    document.getElementById('listBtn').classList.toggle('active', v === 'list');
+    render();
+  }
+
+  // ── MODAL ──
+  function openModal(preType) {
+    if (preType) selectType(preType);
+    document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('docName').focus(), 100);
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+  // ── HISTORY MODAL ──
+  async function openHistory(docId, docName) {
+    document.getElementById('historyTitle').textContent = `Histórico — ${docName}`;
+    document.getElementById('historyList').innerHTML = '<div class="history-empty">A carregar...</div>';
+    document.getElementById('historyOverlay').classList.add('open');
+
+    try {
+      const versions = await apiFetch(`/documents/${docId}/versions`);
+      if (!versions.length) {
+        document.getElementById('historyList').innerHTML =
+          '<div class="history-empty">Ainda não há alterações registadas.</div>';
+        return;
+      }
+      document.getElementById('historyList').innerHTML = versions.map(v => {
+        const name = v.editor_name || 'Sistema';
+        const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        return `
+          <div class="history-row">
+            <div class="history-avatar">${initials}</div>
+            <div class="history-info">
+              <div class="history-name">${name}</div>
+              <div class="history-time">${formatDate(v.created_at)}</div>
+            </div>
+          </div>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('historyList').innerHTML =
+        '<div class="history-empty">Não foi possível carregar o histórico.</div>';
+    }
+  }
+
+  function closeHistory() { document.getElementById('historyOverlay').classList.remove('open'); }
+  function closeHistoryOutside(e) { if (e.target === document.getElementById('historyOverlay')) closeHistory(); }
+  function closeConfirmOutside(e) { if (e.target === document.getElementById('confirmOverlay')) closeConfirm(); }
+  function selectType(type) {
+    selectedType = type;
+    document.getElementById('typeWord').classList.toggle('selected', type==='word');
+    document.getElementById('typeExcel').classList.toggle('selected', type==='excel');
+  }
+
+  async function createDocument() {
+    const name = document.getElementById('docName').value.trim();
+    if (!name) { document.getElementById('docName').focus(); return; }
+
+    closeModal();
+    document.getElementById('docName').value = '';
+
+    try {
+      const result = await apiFetch('/documents', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      const doc = {
+        id:    result.id,
+        name:  result.name,
+        type:  selectedType,
+        owner: 'Utilizador',
+        date:  'Agora mesmo',
+      };
+      docs.unshift(doc);
+      saveToDocs(doc);
+      render();
+      showToast(`"${name}" criado com sucesso`);
+      setTimeout(() => openDoc(result.id, selectedType), 600);
+    } catch (err) {
+      // Fallback: cria localmente
+      const id  = Date.now().toString();
+      const doc = { id, name, type: selectedType, owner: 'Utilizador', date: 'Agora mesmo' };
+      docs.unshift(doc);
+      saveToDocs(doc);
+      render();
+      showToast(`"${name}" criado localmente`);
+      setTimeout(() => openDoc(id, selectedType), 600);
+    }
+  }
+
+  // ── DOC ACTIONS ──
+  function openDoc(id, type) {
+    const page = type === 'excel' ? 'excel.html' : 'editor.html';
+    window.location.href = `${page}?id=${id}&return=${encodeURIComponent('dashboard.html')}`;
+  }
+  async function renameDoc(id) {
+    id = isNaN(id) ? id : Number(id);
+    const doc = docs.find(d => d.id === id);
+    if (!doc) return;
+
+    const name = prompt('Novo nome:', doc.name);
+    if (!name || !name.trim()) return;
+    if (name.trim() === doc.name) return;
+
+    try {
+      const updated = await apiFetch(`/documents/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      // Actualiza com o que a BD devolveu
+      doc.name = updated.name || name.trim();
+      doc.date = formatDate(updated.updated_at);
+      localStorage.setItem('ji_docs', JSON.stringify(docs));
+      render();
+      showToast(`Documento renomeado para "${doc.name}"`);
+    } catch (err) {
+      console.error('[Dashboard] Rename falhou:', err.message);
+      showToast('Erro ao renomear o documento');
+    }
+  }
+
+  async function deleteDoc(id) {
+    id = isNaN(id) ? id : Number(id);
+    const doc = docs.find(d => d.id === id);
+    if (!doc) return;
+    if (!confirm(`Tens a certeza que queres eliminar "${doc.name}"?
+Esta acção não pode ser desfeita.`)) return;
+
+    try {
+      await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+      docs = docs.filter(d => d.id !== id);
+      localStorage.setItem('ji_docs', JSON.stringify(docs));
+      render();
+      showToast(`"${doc.name}" eliminado com sucesso`);
+    } catch (err) {
+      console.error('[Dashboard] Delete falhou:', err.message);
+      showToast('Erro ao eliminar o documento');
+    }
+  }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── KEYBOARD ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('searchInput').focus();
+    }
+    if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('open')) {
+      createDocument();
+    }
+  });
+
+  // ── USER ──
+  function loadUser() {
+    const user = JSON.parse(localStorage.getItem('ji_user') || '{}');
+    const name     = user.name     || 'Utilizador';
+    const initials = user.initials || name.substring(0, 2).toUpperCase();
+
+    // Avatar na topbar
+    document.getElementById('avatarBtn').textContent = initials;
+    document.getElementById('menuAvatar').textContent = initials;
+    document.getElementById('menuName').textContent   = name;
+
+    // Saudação dinâmica
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+    const firstName = name.split(' ')[0];
+    document.getElementById('heroGreeting').textContent = `${greeting}, ${firstName}.`;
+  }
+
+  function toggleUserMenu() {
+    document.getElementById('userMenu').classList.toggle('open');
+  }
+
+  function logout() {
+    localStorage.removeItem('ji_token');
+    localStorage.removeItem('ji_user');
+    localStorage.removeItem('ji_docs');
+    window.location.href = 'login.html';
+  }
+
+  // Fecha o menu ao clicar fora
+  document.addEventListener('click', (e) => {
+    const menu   = document.getElementById('userMenu');
+    const avatar = document.getElementById('avatarBtn');
+    if (!menu.contains(e.target) && !avatar.contains(e.target)) {
+      menu.classList.remove('open');
+    }
+  });
+
+  // ── INIT ──
+  // Redireciona para login se não houver token
+  if (!localStorage.getItem('ji_token')) {
+    window.location.href = 'login.html';
+  }
+
+  loadUser();
+  // Tenta sempre carregar da API — BD é a fonte de verdade
+  loadDocuments();
+</script>
+<!-- Footer -->
+<footer style="background:var(--surface);border-top:1px solid var(--outline-var);padding:24px 32px;margin-top:24px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:360px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="/assets/footer-logo.svg" alt="JI SYNC" style="height:32px;filter:grayscale(1);"/>
+        <span style="font-weight:700;color:var(--on-surface);">JI SYNC</span>
+      </div>
+      <p style="color:var(--on-surface-var);margin:0;">A plataforma de sincronização de documentos feita para o futuro do trabalho colaborativo.</p>
+      <p style="color:var(--outline);font-size:12px;margin:0;">© 2026 JI SYNC. Todos os direitos reservados.</p>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Legal</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Privacidade</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Termos de Serviço</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Recursos</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Blog</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Segurança</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Contacto</a>
+      </div>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

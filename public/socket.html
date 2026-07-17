@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Socket Test | JI Sync</title>
+  <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+  <style>
+    body { font-family: monospace; background: #1b1c1d; color: #e0e0e0; padding: 2rem; }
+    h1 { color: #3366cc; }
+    input, button, select { padding: 8px 12px; margin: 4px; border-radius: 4px; border: 1px solid #444; }
+    input, select { background: #2a2a2a; color: #fff; width: 250px; }
+    button { background: #3366cc; color: #fff; cursor: pointer; border: none; }
+    button:hover { background: #2255bb; }
+    button.danger { background: #ba1a1a; }
+    #log { margin-top: 1.5rem; background: #111; padding: 1rem; border-radius: 6px;
+           height: 350px; overflow-y: auto; font-size: 13px; line-height: 1.8; }
+    .event-in  { color: #4caf50; }
+    .event-out { color: #3366cc; }
+    .event-err { color: #f44336; }
+    .event-sys { color: #aaa; }
+    hr { border-color: #333; margin: 1.5rem 0; }
+    label { color: #aaa; font-size: 12px; display: block; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<h1>⚡ JI Sync — Socket Test</h1>
+
+<!-- Step 1: Login -->
+<section>
+  <h3 style="color:#dcc661">1. Autenticar</h3>
+  <label>Nome de utilizador</label>
+  <input id="loginName" placeholder="nome" value="Valtícia Mendes"/>
+  <label>Palavra-passe</label>
+  <input id="loginPass" type="password" placeholder="password" value="Sync@2025"/>
+  <br/>
+  <button onclick="doLogin()">🔑 Login & Ligar Socket</button>
+</section>
+
+<hr/>
+
+<!-- Step 2: Join Room -->
+<section>
+  <h3 style="color:#dcc661">2. Entrar numa Sala</h3>
+  <label>Room ID (ID do documento)</label>
+  <input id="roomId" placeholder="ex: room-1"/>
+  <label>Cor do cursor</label>
+  <input id="cursorColor" type="color" value="#3366cc"/>
+  <br/>
+  <button onclick="joinRoom()">🚪 Entrar na Sala</button>
+</section>
+
+<hr/>
+
+<!-- Step 3: Send Events -->
+<section>
+  <h3 style="color:#dcc661">3. Enviar Eventos</h3>
+
+  <label>Conteúdo Word (HTML)</label>
+  <input id="wordContent" placeholder="<p>Olá mundo</p>" value="<p>Olá mundo</p>"/>
+  <button onclick="sendWord()">📝 word-change</button>
+
+  <br/>
+
+  <label>Dados Excel (JSON)</label>
+  <input id="excelContent" placeholder='[["A1","B1"],["A2","B2"]]' value='[["A1","B1"],["A2","B2"]]'/>
+  <button onclick="sendExcel()">📊 excel-change</button>
+
+  <br/>
+
+  <button onclick="sendCursor()">🖱️ cursor-move</button>
+  <button onclick="createVersion()">💾 create-version</button>
+  <button class="danger" onclick="disconnect()">⛔ Desligar</button>
+</section>
+
+<hr/>
+
+<div id="log"><span class="event-sys">— À espera de eventos —</span></div>
+
+<script>
+  let socket = null;
+  let token  = null;
+
+  function log(msg, type = "sys") {
+    const div = document.getElementById("log");
+    const time = new Date().toLocaleTimeString();
+    div.innerHTML += `<div class="event-${type}">[${time}] ${msg}</div>`;
+    div.scrollTop = div.scrollHeight;
+  }
+
+  async function doLogin() {
+    const name     = document.getElementById("loginName").value;
+    const password = document.getElementById("loginPass").value;
+
+    try {
+      const res  = await fetch("http://localhost:3000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, password }),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      token = data.token;
+      log(`✅ Login bem-sucedido. Token: ${token.substring(0, 30)}...`, "in");
+
+      // Liga o socket com o token
+      socket = io("http://localhost:3000", {
+        auth: { token },
+        transports: ["websocket"],
+      });
+
+      socket.on("connect",       () => log(`🔌 Socket ligado: ${socket.id}`, "in"));
+      socket.on("disconnect",    () => log("🔌 Socket desligado", "err"));
+      socket.on("connect_error", (e) => log(`❌ Erro de ligação: ${e.message}`, "err"));
+
+      socket.on("init-document", (doc) => log(`📄 init-document: ${JSON.stringify(doc).substring(0, 100)}...`, "in"));
+      socket.on("word-update",   (html) => log(`📝 word-update recebido: ${html.substring(0, 80)}`, "in"));
+      socket.on("excel-update",  (data) => log(`📊 excel-update recebido: ${JSON.stringify(data).substring(0, 80)}`, "in"));
+      socket.on("cursor-update", (c)    => log(`🖱️ cursor-update: ${JSON.stringify(c)}`, "in"));
+      socket.on("users-update",  (u)    => log(`👥 users-update: ${JSON.stringify(u)}`, "in"));
+
+    } catch (err) {
+      log(`❌ Erro no login: ${err.message}`, "err");
+    }
+  }
+
+  function joinRoom() {
+    if (!socket) return log("⚠️ Liga o socket primeiro", "err");
+    const roomId = document.getElementById("roomId").value || "room-1";
+    const color  = document.getElementById("cursorColor").value;
+    socket.emit("join-room", { roomId, color });
+    log(`📤 join-room → roomId: ${roomId}, color: ${color}`, "out");
+  }
+
+  function sendWord() {
+    if (!socket) return log("⚠️ Liga o socket primeiro", "err");
+    const html = document.getElementById("wordContent").value;
+    socket.emit("word-change", html);
+    log(`📤 word-change → ${html}`, "out");
+  }
+
+  function sendExcel() {
+    if (!socket) return log("⚠️ Liga o socket primeiro", "err");
+    try {
+      const data = JSON.parse(document.getElementById("excelContent").value);
+      socket.emit("excel-change", data);
+      log(`📤 excel-change → ${JSON.stringify(data)}`, "out");
+    } catch {
+      log("❌ JSON inválido no campo Excel", "err");
+    }
+  }
+
+  function sendCursor() {
+    if (!socket) return log("⚠️ Liga o socket primeiro", "err");
+    const cursor = { x: Math.random() * 800, y: Math.random() * 600 };
+    socket.emit("cursor-move", cursor);
+    log(`📤 cursor-move → ${JSON.stringify(cursor)}`, "out");
+  }
+
+  function createVersion() {
+    if (!socket) return log("⚠️ Liga o socket primeiro", "err");
+    socket.emit("create-version");
+    log("📤 create-version enviado", "out");
+  }
+
+  function disconnect() {
+    if (socket) { socket.disconnect(); socket = null; }
+    log("⛔ Desligado manualmente", "err");
+  }
+</script>
+</body>
+</html>

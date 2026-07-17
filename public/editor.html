@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Editor | JI Sync</title>
+<!-- Quill.js -->
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet"/>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500&family=Public+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<style>
+  :root {
+    --primary:        #3366cc;
+    --primary-dim:    #2255bb;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --paper:          #ffffff;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+    --topbar-h:       56px;
+    --toolbar-h:      44px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--surface-low);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    display: flex; flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle; line-height: 1;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 12px;
+    flex-shrink: 0; z-index: 100;
+  }
+
+  .topbar-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+  .topbar-back:hover { background: var(--surface-high); }
+
+  /* ── WINDOW CONTROLS (minimizar / maximizar / fechar) ── */
+  .window-controls {
+    display: flex; align-items: center;
+    margin-left: 8px; padding-left: 8px;
+    border-left: 1px solid var(--outline-var);
+  }
+  .window-btn {
+    width: 32px; height: 32px; border: none; background: none;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer; color: var(--outline);
+  }
+  .window-btn:hover { background: var(--surface-high); color: var(--on-surface); }
+  .window-btn.close-btn:hover { background: #e81123; color: #fff; }
+
+  .doc-icon {
+    width: 32px; height: 32px; border-radius: 4px;
+    background: #e8f0fe;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .doc-icon .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+
+  .doc-title-wrap { flex: 1; min-width: 0; }
+  .doc-title {
+    font-family: var(--sans);
+    font-size: 15px; font-weight: 500;
+    color: var(--on-surface);
+    border: none; background: none; outline: none;
+    width: 100%; padding: 4px 6px; border-radius: 4px;
+    transition: background 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-title:hover { background: var(--surface-low); }
+  .doc-title:focus { background: var(--surface-low); }
+  .doc-save-status {
+    font-size: 11px; color: var(--outline);
+    padding: 0 6px; font-family: var(--sans);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .save-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--outline-var);
+    transition: background 0.3s;
+  }
+  .save-dot.saving  { background: #f9a825; }
+  .save-dot.saved   { background: #2e7d32; }
+  .save-dot.unsaved { background: #ba1a1a; }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  /* Collaborators */
+  .collab-avatars { display: flex; margin-right: 4px; }
+  .collab-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 700;
+    color: #fff; margin-left: -8px; cursor: default;
+    transition: transform 0.15s;
+    position: relative;
+  }
+  .collab-avatar:first-child { margin-left: 0; }
+  .collab-avatar:hover { transform: translateY(-3px) scale(1.1); z-index: 2; }
+  .collab-tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--on-surface); color: var(--surface);
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 11px; white-space: nowrap;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .collab-avatar:hover .collab-tooltip { opacity: 1; }
+
+  .btn-share {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-share:hover { background: var(--primary-dim); }
+
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var); transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── EXPORT MENU ── */
+  .export-menu-wrap { position: relative; }
+  .export-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 190px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    display: none;
+    padding: 6px;
+    animation: menuIn 0.15s ease;
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border: none; background: none;
+    border-radius: 6px; cursor: pointer; text-align: left;
+    font-size: 13px; color: var(--on-surface); font-family: var(--sans);
+  }
+  .export-menu button:hover { background: var(--surface-high); }
+  .export-menu .material-symbols-outlined { font-size: 18px; color: var(--outline); }
+
+  /* ── SHARE POPOVER ── */
+  .share-wrap { position: relative; }
+  .share-popover {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 280px; background: var(--paper, #fff);
+    border: 1px solid var(--outline-var); border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+    padding: 14px; display: none; z-index: 400;
+  }
+  .share-popover.show { display: block; }
+  .share-popover-title { font-size: 13px; font-weight: 600; color: var(--on-surface); margin-bottom: 10px; }
+  .share-invite-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .share-invite-row input {
+    flex: 1; min-width: 0; border: 1px solid var(--outline-var); border-radius: 6px;
+    padding: 7px 9px; font-size: 12px; outline: none;
+  }
+  .share-invite-row input:focus { border-color: var(--primary); }
+  .share-invite-row select {
+    border: 1px solid var(--outline-var); border-radius: 6px;
+    font-size: 11px; padding: 0 4px; background: var(--paper); color: var(--on-surface);
+  }
+  .share-invite-btn {
+    width: 100%; padding: 7px; margin-bottom: 10px;
+    background: var(--primary); color: #fff; border: none; border-radius: 6px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .share-invite-btn:hover { opacity: 0.9; }
+  .share-collab-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .share-collab-row { display: flex; align-items: center; gap: 8px; }
+  .share-collab-avatar {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff; font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .share-collab-info { flex: 1; min-width: 0; }
+  .share-collab-name { font-size: 12px; font-weight: 500; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .share-collab-email { font-size: 10px; color: var(--outline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .share-collab-role { font-size: 9px; color: var(--outline); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+  .share-collab-row button {
+    border: none; background: none; cursor: pointer; color: var(--outline); flex-shrink: 0;
+    display: flex; padding: 2px; border-radius: 4px;
+  }
+  .share-collab-row button:hover { background: var(--surface-high); color: var(--on-surface); }
+  .share-empty { font-size: 11px; color: var(--outline); padding: 4px 0; }
+  .share-popover-footer { border-top: 1px solid var(--outline-var); margin-top: 10px; padding-top: 8px; }
+  .share-popover-footer button {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: none; border: none; cursor: pointer; color: var(--outline);
+    font-size: 11px; padding: 6px; border-radius: 6px;
+  }
+  .share-popover-footer button:hover { background: var(--surface-high); color: var(--on-surface); }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── QUILL TOOLBAR OVERRIDE ── */
+  .ql-toolbar.ql-snow {
+    height: var(--toolbar-h);
+    background: var(--paper);
+    border: none;
+    border-bottom: 1px solid var(--outline-var);
+    padding: 4px 16px;
+    display: flex; align-items: center; flex-wrap: nowrap;
+    overflow-x: auto; gap: 2px;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .ql-toolbar.ql-snow::-webkit-scrollbar { display: none; }
+
+  .ql-toolbar.ql-snow .ql-formats { margin-right: 4px; border-right: 1px solid var(--outline-var); padding-right: 6px; }
+  .ql-toolbar.ql-snow .ql-formats:last-child { border-right: none; }
+
+  .ql-toolbar.ql-snow button,
+  .ql-toolbar.ql-snow .ql-picker-label {
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .ql-toolbar.ql-snow button:hover,
+  .ql-toolbar.ql-snow .ql-picker-label:hover,
+  .ql-toolbar.ql-snow button.ql-active,
+  .ql-toolbar.ql-snow .ql-picker-label.ql-active {
+    background: var(--surface-high) !important;
+    color: var(--primary) !important;
+  }
+  .ql-toolbar.ql-snow button svg,
+  .ql-toolbar.ql-snow .ql-picker-label svg { color: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button.ql-active svg,
+  .ql-toolbar.ql-snow button:hover svg { color: var(--primary); }
+  .ql-toolbar.ql-snow .ql-stroke { stroke: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button:hover .ql-stroke,
+  .ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: var(--primary); }
+  .ql-toolbar.ql-snow .ql-fill { fill: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button:hover .ql-fill,
+  .ql-toolbar.ql-snow button.ql-active .ql-fill { fill: var(--primary); }
+
+  .ql-snow .ql-picker { color: var(--on-surface-var); font-family: var(--sans); font-size: 13px; }
+  .ql-snow .ql-picker-options { border: 1px solid var(--outline-var); border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+  /* ── EDITOR LAYOUT ── */
+  .editor-layout {
+    display: flex; flex: 1; overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--paper);
+    border-right: 1px solid var(--outline-var);
+    display: flex; flex-direction: column;
+    overflow-y: auto; overflow-x: hidden;
+    transition: width 0.25s ease;
+  }
+  .sidebar.collapsed { width: 0; border-right: none; }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--outline-var); }
+  .sidebar-label {
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--outline); margin-bottom: 10px;
+  }
+  .outline-item {
+    padding: 5px 8px; border-radius: 4px;
+    font-size: 12px; color: var(--on-surface-var);
+    cursor: pointer; transition: background 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .outline-item:hover { background: var(--surface-low); color: var(--primary); }
+  .outline-item.h1 { font-weight: 600; color: var(--on-surface); font-size: 13px; }
+  .outline-item.h2 { padding-left: 16px; }
+  .outline-item.h3 { padding-left: 24px; font-size: 11px; }
+
+  .version-item {
+    padding: 8px; border-radius: 4px; cursor: pointer;
+    transition: background 0.15s; border: 1px solid transparent;
+  }
+  .version-item:hover { background: var(--surface-low); border-color: var(--outline-var); }
+  .version-name { font-size: 12px; font-weight: 500; color: var(--on-surface); }
+  .version-time { font-size: 10px; color: var(--outline); margin-top: 2px; }
+  .version-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding: 16px; }
+
+  /* Page canvas area */
+  .canvas-area {
+    flex: 1; overflow-y: auto;
+    padding: 40px 24px;
+    background: var(--surface-low);
+  }
+
+  /* Paper */
+  .paper {
+    background: var(--paper);
+    width: 100%; max-width: 816px;
+    margin: 0 auto;
+    min-height: calc(100vh - var(--topbar-h) - var(--toolbar-h) - 80px);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.04);
+    padding: 80px 96px;
+    position: relative;
+  }
+
+  /* Quill editor itself */
+  .ql-container.ql-snow { border: none; }
+  .ql-editor {
+    font-family: var(--serif);
+    font-size: 12pt;
+    line-height: 1.8;
+    color: var(--on-surface);
+    min-height: 600px;
+    padding: 0;
+  }
+  .ql-editor p { margin-bottom: 0.6em; }
+  .ql-editor h1 { font-family: var(--serif); font-weight: 600; font-size: 24pt; margin-bottom: 0.4em; line-height: 1.2; }
+
+  /* ── FONT FAMILIES (aplicadas ao texto do documento) ── */
+  .ql-font-serif { font-family: Georgia, 'Times New Roman', serif; }
+  .ql-font-monospace { font-family: 'Courier New', monospace; }
+  .ql-font-georgia { font-family: Georgia, serif; }
+  .ql-font-times-new-roman { font-family: 'Times New Roman', Times, serif; }
+  .ql-font-courier-new { font-family: 'Courier New', Courier, monospace; }
+
+  /* ── QUEBRA DE PÁGINA ── */
+  .ql-editor .page-break-blot {
+    position: relative;
+    margin: 28px 0; padding-top: 10px;
+    border-top: 1.5px dashed var(--outline-var, #c3c6d5);
+    text-align: center; user-select: none;
+  }
+  .ql-editor .page-break-blot span {
+    position: relative; top: -18px;
+    background: var(--paper, #fff);
+    padding: 0 10px;
+    font-size: 9px; color: var(--outline, #737784);
+    text-transform: uppercase; letter-spacing: 0.12em;
+    font-family: var(--label, sans-serif);
+  }
+
+  /* ── COMENTÁRIOS: realce no texto ── */
+  .ql-editor [data-comment-id] {
+    background: rgba(255, 213, 79, 0.35);
+    border-bottom: 2px solid rgba(245, 166, 35, 0.6);
+    cursor: pointer;
+  }
+  .ql-editor [data-comment-id]:hover { background: rgba(255, 213, 79, 0.55); }
+  .ql-editor [data-comment-id][data-comment-resolved="true"] {
+    background: rgba(0,0,0,0.04);
+    border-bottom-color: var(--outline-var, #c3c6d5);
+  }
+  .ql-editor [data-comment-id][data-comment-resolved="true"]:hover { background: rgba(0,0,0,0.07); }
+
+  /* ── AUTORIA: tooltip ao passar o rato ── */
+  .author-tooltip {
+    position: fixed; z-index: 500;
+    background: var(--on-surface, #1b1c1d); color: #fff;
+    font-size: 11px; font-family: var(--label, sans-serif);
+    padding: 5px 10px; border-radius: 6px;
+    pointer-events: none; white-space: nowrap;
+    display: none; align-items: center; gap: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .author-tooltip.show { display: flex; }
+  .author-tooltip .material-symbols-outlined { font-size: 13px; }
+
+  /* ── COMENTÁRIOS: popover de criação ── */
+  .comment-popover {
+    position: fixed; z-index: 600;
+    width: 260px; background: var(--paper, #fff);
+    border: 1px solid var(--outline-var); border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+    padding: 12px; display: none;
+  }
+  .comment-popover.show { display: block; }
+  .comment-popover textarea {
+    width: 100%; min-height: 64px; resize: vertical;
+    border: 1px solid var(--outline-var); border-radius: 6px;
+    padding: 8px; font-family: var(--sans, inherit); font-size: 13px;
+    outline: none; box-sizing: border-box;
+  }
+  .comment-popover textarea:focus { border-color: var(--primary); }
+  .comment-popover-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
+  .comment-popover-actions button {
+    padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer;
+    font-family: var(--label, sans-serif); font-size: 12px; font-weight: 600;
+  }
+  .comment-popover-cancel { background: none; color: var(--outline); }
+  .comment-popover-submit { background: var(--primary); color: #fff; }
+
+  /* ── COMENTÁRIOS: barra lateral ── */
+  .comment-item {
+    padding: 10px 12px; border-radius: 6px;
+    background: var(--surface-low, #f5f3f4);
+    margin-bottom: 8px; cursor: pointer;
+    border-left: 3px solid var(--primary);
+    transition: background 0.15s;
+  }
+  .comment-item:hover { background: var(--surface-high); }
+  .comment-item.resolved { border-left-color: var(--outline-var); opacity: 0.6; }
+  .comment-item-quote {
+    font-size: 11px; color: var(--outline); font-style: italic;
+    margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .comment-item-text { font-size: 12px; color: var(--on-surface); margin-bottom: 6px; line-height: 1.4; }
+  .comment-item-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 10px; color: var(--outline);
+  }
+  .comment-item-actions { display: flex; gap: 4px; }
+  .comment-item-actions button {
+    border: none; background: none; cursor: pointer; color: var(--outline);
+    padding: 2px; border-radius: 4px; display: flex;
+  }
+  .comment-item-actions button:hover { background: var(--outline-var); color: var(--on-surface); }
+  .comment-empty { font-size: 12px; color: var(--outline); padding: 8px 4px; }
+  .ql-editor h2 { font-family: var(--serif); font-weight: 500; font-size: 18pt; margin-bottom: 0.4em; }
+  .ql-editor h3 { font-family: var(--serif); font-weight: 500; font-size: 14pt; margin-bottom: 0.3em; }
+  .ql-editor blockquote {
+    border-left: 3px solid var(--primary);
+    margin: 1em 0; padding: 4px 16px;
+    color: var(--on-surface-var);
+    font-style: italic;
+  }
+  .ql-editor.ql-blank::before {
+    font-style: italic;
+    color: var(--outline);
+    font-family: var(--serif);
+  }
+
+  /* ── CURSOR LABELS ── */
+  .remote-cursor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .remote-cursor-caret {
+    width: 2px; height: 1.2em;
+    display: inline-block;
+  }
+  .remote-cursor-label {
+    position: absolute;
+    top: -20px; left: 0;
+    padding: 2px 6px; border-radius: 2px;
+    font-family: var(--label);
+    font-size: 10px; font-weight: 600;
+    color: #fff; white-space: nowrap;
+  }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    height: 26px;
+    background: var(--primary);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .statusbar-item {
+    font-family: var(--label);
+    font-size: 11px; font-weight: 500;
+    color: rgba(255,255,255,0.8);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .statusbar-item .material-symbols-outlined { font-size: 13px; }
+  .online-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #69f0ae;
+  }
+
+  /* ── SIDEBAR TOGGLE ── */
+  .sidebar-toggle {
+    position: fixed;
+    left: 8px;
+    top: calc(var(--topbar-h) + var(--toolbar-h) + 8px);
+    z-index: 50;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--outline-var);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--outline);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: opacity 0.2s;
+  }
+  .sidebar-toggle:hover { opacity: 0.8; }
+
+  /* ── WORD COUNT CHIP ── */
+  .word-count-chip {
+    position: fixed;
+    bottom: 36px; right: 24px;
+    background: var(--paper);
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    padding: 6px 14px;
+    font-family: var(--label);
+    font-size: 11px; font-weight: 600;
+    color: var(--on-surface-var);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    pointer-events: none;
+  }
+
+  /* ── MODE BANNER ── */
+  .mode-banner {
+    position: fixed;
+    top: calc(var(--topbar-h) + var(--toolbar-h) + 12px);
+    left: 50%; transform: translateX(-50%);
+    z-index: 200;
+    padding: 10px 20px; border-radius: 24px;
+    font-family: var(--label); font-size: 12px; font-weight: 600;
+    display: none; align-items: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    animation: fadeIn 0.3s ease;
+  }
+  .mode-banner.view {
+    background: #fff3cd; color: #7c5800;
+    border: 1px solid #f9a825;
+    display: flex;
+  }
+  .mode-banner.blocked {
+    background: #ffdad6; color: #93000a;
+    border: 1px solid #ba1a1a;
+    display: flex;
+  }
+  .mode-banner .material-symbols-outlined { font-size: 16px; }
+
+  /* ── READONLY OVERLAY ── */
+  .readonly-overlay {
+    position: absolute; inset: 0;
+    z-index: 5; cursor: not-allowed;
+    display: none;
+  }
+  .readonly-overlay.active { display: block; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; top: calc(var(--topbar-h) + 12px); right: 16px;
+    background: var(--on-surface); color: var(--surface);
+    padding: 10px 18px; border-radius: 4px;
+    font-size: 12px; font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 300; transform: translateX(120%);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    font-family: var(--sans);
+  }
+  .toast.show { transform: translateX(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  .paper { animation: fadeIn 0.3s ease; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .paper { padding: 48px 32px; }
+  }
+  @media (max-width: 600px) {
+    .paper { padding: 32px 20px; }
+    .canvas-area { padding: 16px 8px; }
+    .btn-share span:last-child { display: none; }
+  }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <div class="doc-icon">
+    <span class="material-symbols-outlined">article</span>
+  </div>
+
+  <div class="doc-title-wrap">
+    <input class="doc-title" id="docTitle" type="text" value="Relatório de Sistemas Distribuídos" spellcheck="false"/>
+    <div class="doc-save-status">
+      <div class="save-dot saved" id="saveDot"></div>
+      <span id="saveText">Guardado</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="collab-avatars" id="collabAvatars"></div>
+
+    <button class="icon-btn" title="Histórico de versões" onclick="toggleSidebar()">
+      <span class="material-symbols-outlined" style="font-size:20px">history</span>
+    </button>
+    <button class="icon-btn" title="Modo de foco" onclick="toggleFocus()">
+      <span class="material-symbols-outlined" style="font-size:20px">fullscreen</span>
+    </button>
+    <div class="export-menu-wrap">
+      <button class="icon-btn" title="Exportar" onclick="toggleExportMenu()">
+        <span class="material-symbols-outlined" style="font-size:20px">download</span>
+      </button>
+      <div class="export-menu" id="exportMenu">
+        <button onclick="exportDocx()"><span class="material-symbols-outlined">description</span>Word (.docx)</button>
+        <button onclick="exportPDF()"><span class="material-symbols-outlined">picture_as_pdf</span>PDF (.pdf)</button>
+      </div>
+    </div>
+    <div class="share-wrap">
+      <button class="btn-share" onclick="toggleSharePopover()">
+        <span class="material-symbols-outlined" style="font-size:16px">person_add</span>
+        <span>Partilhar</span>
+      </button>
+      <div class="share-popover" id="sharePopover">
+        <div class="share-popover-title">Partilhar documento</div>
+        <div class="share-invite-row">
+          <input type="email" id="shareEmailInput" placeholder="email@exemplo.com"/>
+          <select id="shareRoleSelect">
+            <option value="editor">Pode editar</option>
+            <option value="viewer">Só vê</option>
+          </select>
+        </div>
+        <button class="share-invite-btn" onclick="inviteCollaborator()">Convidar</button>
+        <div class="share-collab-list" id="shareCollabList"></div>
+        <div class="share-popover-footer">
+          <button onclick="copyShareLink()">
+            <span class="material-symbols-outlined" style="font-size:14px">link</span>
+            Copiar link
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="window-controls">
+      <button class="window-btn" onclick="minimizeWindow()" title="Minimizar">
+        <span class="material-symbols-outlined" style="font-size:18px">minimize</span>
+      </button>
+      <button class="window-btn" onclick="toggleMaximize()" title="Maximizar">
+        <span class="material-symbols-outlined" style="font-size:18px" id="maximizeIcon">open_in_full</span>
+      </button>
+      <button class="window-btn close-btn" onclick="closeWindow()" title="Fechar">
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- QUILL TOOLBAR (rendered by Quill) -->
+<div id="toolbar">
+  <span class="ql-formats">
+    <select class="ql-header"><option value="1">Título 1</option><option value="2">Título 2</option><option value="3">Título 3</option><option selected>Normal</option></select>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-font">
+      <option value="sans-serif" selected>Sans-serif</option>
+      <option value="serif">Serif</option>
+      <option value="monospace">Monospace</option>
+      <option value="georgia">Georgia</option>
+      <option value="times-new-roman">Times New Roman</option>
+      <option value="courier-new">Courier New</option>
+    </select>
+    <select class="ql-size">
+      <option value="10px">10</option>
+      <option value="12px">12</option>
+      <option value="14px" selected>14</option>
+      <option value="16px">16</option>
+      <option value="18px">18</option>
+      <option value="24px">24</option>
+      <option value="32px">32</option>
+    </select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-bold"></button>
+    <button class="ql-italic"></button>
+    <button class="ql-underline"></button>
+    <button class="ql-strike"></button>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-script" value="sub"></button>
+    <button class="ql-script" value="super"></button>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-color"></select>
+    <select class="ql-background"></select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-list" value="ordered"></button>
+    <button class="ql-list" value="bullet"></button>
+    <button class="ql-indent" value="-1"></button>
+    <button class="ql-indent" value="+1"></button>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-align"></select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-blockquote"></button>
+    <button class="ql-code-block"></button>
+    <button class="ql-link"></button>
+    <button class="ql-image"></button>
+  </span>
+  <span class="ql-formats">
+    <button id="btnPageBreak" title="Inserir quebra de página" type="button">
+      <span class="material-symbols-outlined" style="font-size:16px">insert_page_break</span>
+    </button>
+    <button id="btnComment" title="Comentar selecção" type="button">
+      <span class="material-symbols-outlined" style="font-size:16px">add_comment</span>
+    </button>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-clean"></button>
+  </span>
+</div>
+
+<!-- MODE BANNER -->
+<div class="mode-banner" id="modeBanner">
+  <span class="material-symbols-outlined">info</span>
+  <span id="modeBannerText">Modo de leitura activo</span>
+</div>
+
+<!-- SIDEBAR TOGGLE -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Painel lateral">
+  <span class="material-symbols-outlined" style="font-size:14px">menu_open</span>
+</button>
+
+<!-- EDITOR LAYOUT -->
+<div class="editor-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Utilizadores online</div>
+      <div id="onlineUsers" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Índice</div>
+      <div id="outlineList" style="display:flex;flex-direction:column;gap:2px;"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Comentários</div>
+      <div id="commentsList"><div class="comment-empty">Sem comentários. Seleciona texto e clica em 💬 para comentar.</div></div>
+    </div>
+
+    <div class="sidebar-label" style="padding:16px 16px 0">Versões guardadas</div>
+    <div class="version-list" id="versionList"></div>
+
+    <div style="padding:12px 16px;border-top:1px solid var(--outline-var)">
+      <button onclick="saveVersion()" style="width:100%;padding:8px;background:var(--surface-low);border:1px solid var(--outline-var);border-radius:2px;font-family:var(--label);font-size:12px;font-weight:600;color:var(--on-surface-var);cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span class="material-symbols-outlined" style="font-size:16px">save</span>
+        Guardar versão
+      </button>
+    </div>
+  </aside>
+
+  <!-- CANVAS -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="paper">
+      <div class="readonly-overlay" id="readonlyOverlay"></div>
+      <div id="editor"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="statusbar-item">
+    <div class="online-dot"></div>
+    <span id="statusOnline">Ligado</span>
+  </div>
+  <div class="statusbar-item">
+    <span class="material-symbols-outlined">sync</span>
+    <span id="statusSync">Sincronizado</span>
+  </div>
+  <div class="statusbar-item" style="margin-left:auto">
+    <span class="material-symbols-outlined">room</span>
+    <span id="statusRoom">—</span>
+  </div>
+</div>
+
+<!-- WORD COUNT -->
+<div class="word-count-chip" id="wordCount">0 palavras</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── URL PARAMS ──
+  const params    = new URLSearchParams(window.location.search);
+  const roomId    = params.get('id') || 'doc-' + Date.now();
+  const token     = localStorage.getItem('ji_token');
+  const returnUrl = params.get('return') ? decodeURIComponent(params.get('return')) : 'dashboard.html';
+  const currentUser = JSON.parse(localStorage.getItem('ji_user') || '{}');
+  const myName = currentUser.name || 'Utilizador';
+
+  // ── QUILL: REGISTAR FORMATOS PERSONALIZADOS (antes de inicializar) ──
+  const FontFormat = Quill.import('formats/font');
+  FontFormat.whitelist = ['sans-serif', 'serif', 'monospace', 'georgia', 'times-new-roman', 'courier-new'];
+  Quill.register(FontFormat, true);
+
+  const SizeFormat = Quill.import('formats/size');
+  SizeFormat.whitelist = ['10px', '12px', '14px', '16px', '18px', '24px', '32px'];
+  Quill.register(SizeFormat, true);
+
+  // Bloco de "quebra de página": um separador visual que, ao exportar
+  // (Word ou PDF), força uma página nova a partir dali.
+  const BlockEmbed = Quill.import('blots/block/embed');
+  class PageBreakBlot extends BlockEmbed {
+    static create() {
+      const node = super.create();
+      node.setAttribute('contenteditable', 'false');
+      // Estilo inline (não depende do CSS da página) para que a quebra
+      // real de página seja respeitada também nos ficheiros exportados.
+      node.style.pageBreakAfter = 'always';
+      node.style.breakAfter = 'page';
+      node.innerHTML = '<span>Quebra de página</span>';
+      return node;
+    }
+  }
+  PageBreakBlot.blotName = 'pageBreak';
+  PageBreakBlot.tagName = 'div';
+  PageBreakBlot.className = 'page-break-blot';
+  Quill.register(PageBreakBlot);
+
+  // ── AUTORIA E COMENTÁRIOS: atributos inline personalizados ──
+  const Parchment = Quill.import('parchment');
+
+  // Marca cada trecho de texto com o nome de quem o escreveu.
+  const AuthorAttributor = new Parchment.Attributor.Attribute('author', 'data-author', {
+    scope: Parchment.Scope.INLINE,
+  });
+  Quill.register(AuthorAttributor, true);
+
+  // Marca o texto abrangido por um comentário (pelo id do comentário).
+  const CommentAttributor = new Parchment.Attributor.Attribute('commentId', 'data-comment-id', {
+    scope: Parchment.Scope.INLINE,
+  });
+  Quill.register(CommentAttributor, true);
+
+  // Marca visualmente um comentário como resolvido (mantém o texto, esbate o realce).
+  const CommentResolvedAttributor = new Parchment.Attributor.Attribute('commentResolved', 'data-comment-resolved', {
+    scope: Parchment.Scope.INLINE,
+  });
+  Quill.register(CommentResolvedAttributor, true);
+
+  // ── QUILL INIT ──
+  const quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: { toolbar: '#toolbar' },
+    placeholder: 'Começa a escrever o teu documento...',
+  });
+
+  // ── STATE ──
+  let socket        = null;
+  let saveTimer     = null;
+  let isRemoteChange = false;
+  let dbLoaded      = false; // true após loadDocument() terminar
+  const colors = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#6d4c41'];
+  let myColor = colors[Math.floor(Math.random() * colors.length)];
+  const versions = [];
+
+  // ── SOCKET ──
+  function connectSocket() {
+    if (!token) { showToast('Sem token — modo offline'); return; }
+
+    socket = io('http://localhost:3000', {
+      auth: { token },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      updateStatus(true);
+      socket.emit('join-room', { roomId, color: myColor });
+      document.getElementById('statusRoom').textContent = roomId;
+    });
+
+    socket.on('disconnect', () => updateStatus(false));
+    socket.on('connect_error', () => updateStatus(false));
+    socket.on('access-denied', ({ message }) => {
+      alert(message || 'Não tens acesso a este documento.');
+      window.location.href = returnUrl;
+    });
+
+    // Comentários criados/resolvidos/eliminados por outros colaboradores em tempo real
+    socket.on('comment-sync', (payload) => {
+      if (!payload) return;
+      if (payload.action === 'add') {
+        if (comments.some(c => c.id === payload.comment.id)) return; // já temos (fomos nós)
+        comments.push(payload.comment);
+        renderComments();
+      } else if (payload.action === 'resolve') {
+        formatCommentRanges(payload.commentId, 'commentResolved', payload.resolved ? 'true' : null);
+        const c = comments.find(x => x.id === payload.commentId);
+        if (c) c.resolved = payload.resolved;
+        renderComments();
+      } else if (payload.action === 'delete') {
+        formatCommentRanges(payload.commentId, 'commentId', null);
+        comments = comments.filter(x => x.id !== payload.commentId);
+        renderComments();
+      }
+    });
+
+    socket.on('init-document', () => {
+      // Conteúdo é sempre carregado via loadDocument() — BD é fonte de verdade
+    });
+
+    socket.on('word-update', (html) => {
+      isRemoteChange = true;
+
+      // Em vez de substituir todo o innerHTML (o que fazia o cursor saltar
+      // e podia apagar texto que a outra pessoa estava a escrever nesse
+      // instante), calculamos só a diferença entre o conteúdo actual e o
+      // novo, e aplicamos apenas essa diferença. O Quill ajusta sozinho a
+      // posição do cursor local face a essa mudança.
+      try {
+        const oldDelta = quill.getContents();
+        const newDelta = quill.clipboard.convert(html);
+        const diff = oldDelta.diff(newDelta);
+        quill.updateContents(diff, 'silent');
+      } catch (err) {
+        // Fallback: se o diff falhar por algum motivo, recorre ao método antigo
+        console.warn('[Editor] Diff falhou, a aplicar substituição completa:', err.message);
+        const sel = quill.getSelection();
+        quill.root.innerHTML = html;
+        if (sel) quill.setSelection(sel);
+      }
+
+      isRemoteChange = false;
+      updateWordCount();
+      updateOutline();
+    });
+
+    socket.on('users-update', (data) => {
+      // Suporta formato novo {users, viewers} e formato antigo {}
+      if (data.users) renderCollabAvatars(data.users, data.viewers || {});
+      else renderCollabAvatars(data, {});
+    });
+
+    socket.on('join-mode', ({ mode, message, editors, viewers }) => {
+      updateStatusBar(editors, viewers);
+      if (mode === 'view') {
+        setReadOnly(true);
+        showModeBanner('view', message || `Modo leitura — ${editors} editores, ${viewers} leitores`);
+      } else {
+        setReadOnly(false);
+        if (editors > 1) showToast(`${editors} editores activos neste documento`);
+      }
+    });
+
+    socket.on('room-blocked', ({ message }) => {
+      setReadOnly(true);
+      showModeBanner('blocked', message);
+      showToast('Documento lotado — apenas leitura disponível');
+    });
+
+    socket.on('edit-denied', ({ message }) => {
+      showToast(message);
+    });
+
+    socket.on('cursor-update', ({ user, index, length, color }) => {
+      renderRemoteCursor(user, index, length, color);
+    });
+  }
+
+  // ── EDITOR EVENTS ──
+  quill.on('text-change', (delta, old, source) => {
+    if (source !== 'user' || isRemoteChange) return;
+
+    updateWordCount();
+    updateOutline();
+    setSaveStatus('unsaved');
+
+    // Debounce emit
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (socket) socket.emit('word-change', quill.root.innerHTML);
+      autoSave();
+    }, 500);
+  });
+
+  quill.on('selection-change', (range) => {
+    if (!range || !socket) return;
+    socket.emit('cursor-move', {
+      index: range.index,
+      length: range.length,
+      color: myColor,
+    });
+  });
+
+  // ── SAVE STATUS ──
+  function setSaveStatus(state) {
+    const dot  = document.getElementById('saveDot');
+    const text = document.getElementById('saveText');
+    dot.className = 'save-dot ' + state;
+    text.textContent = state === 'saving' ? 'A guardar...' : state === 'saved' ? 'Guardado' : 'Não guardado';
+  }
+
+  const API   = 'http://localhost:3000';
+
+  async function autoSave() {
+    setSaveStatus('saving');
+    try {
+      await fetch(`${API}/documents/${roomId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ word_html: quill.root.innerHTML }),
+      });
+    } catch (err) {
+      console.warn('[Editor] AutoSave falhou:', err.message);
+    }
+    setSaveStatus('saved');
+  }
+
+  // ── WORD COUNT ──
+  function updateWordCount() {
+    const text  = quill.getText().trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = quill.getText().replace(/\n/g,'').length;
+    document.getElementById('wordCount').textContent = `${words} palavras · ${chars} carácteres`;
+  }
+
+  // ── OUTLINE ──
+  function updateOutline() {
+    const list = document.getElementById('outlineList');
+    const headings = quill.root.querySelectorAll('h1,h2,h3');
+    if (headings.length === 0) { list.innerHTML = '<div style="font-size:11px;color:var(--outline);padding:4px 8px;">Sem títulos</div>'; return; }
+    list.innerHTML = Array.from(headings).map(h => {
+      const level = h.tagName.toLowerCase();
+      return `<div class="outline-item ${level}" onclick="scrollToHeading(this)" data-text="${h.textContent}">${h.textContent}</div>`;
+    }).join('');
+  }
+
+  function scrollToHeading(el) {
+    const text = el.dataset.text;
+    const headings = quill.root.querySelectorAll('h1,h2,h3');
+    for (const h of headings) {
+      if (h.textContent === text) { h.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
+    }
+  }
+
+  // ── VERSIONS ──
+  function saveVersion() {
+    if (socket) socket.emit('create-version');
+    const now = new Date();
+    versions.unshift({ name: `Versão ${versions.length + 1}`, time: now.toLocaleTimeString('pt', {hour:'2-digit',minute:'2-digit'}) });
+    renderVersions();
+    showToast('Versão guardada');
+    setSaveStatus('saved');
+  }
+
+  function renderVersions() {
+    const list = document.getElementById('versionList');
+    if (versions.length === 0) {
+      list.innerHTML = '<div style="font-size:11px;color:var(--outline);padding:8px;">Nenhuma versão guardada</div>';
+      return;
+    }
+    list.innerHTML = versions.map(v => `
+      <div class="version-item">
+        <div class="version-name">${v.name}</div>
+        <div class="version-time">${v.time}</div>
+      </div>`).join('');
+  }
+
+  // ── COLLAB AVATARS ──
+  function renderCollabAvatars(users, viewers = {}) {
+    const wrap   = document.getElementById('collabAvatars');
+    const online = document.getElementById('onlineUsers');
+    const editors  = Object.values(users);
+    const viewersList = Object.values(viewers);
+    const all = [...editors, ...viewersList];
+
+    wrap.innerHTML = all.slice(0,4).map(u => {
+      const initials = u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div class="collab-avatar" style="background:${u.color}" title="${u.name}">
+        ${initials}<div class="collab-tooltip">${u.name}</div></div>`;
+    }).join('');
+    if (all.length > 4) wrap.innerHTML += `<div class="collab-avatar" style="background:var(--outline)">+${all.length-4}</div>`;
+
+    const editLabel   = editors.length    ? `<div class="sidebar-label" style="padding:8px 8px 4px">Editores (${editors.length})</div>` : '';
+    const viewLabel   = viewersList.length ? `<div class="sidebar-label" style="padding:8px 8px 4px;margin-top:4px">Leitores (${viewersList.length})</div>` : '';
+
+    online.innerHTML =
+      editLabel + editors.map(u => userRow(u, false)).join('') +
+      viewLabel + viewersList.map(u => userRow(u, true)).join('');
+
+    document.getElementById('statusOnline').textContent = `${editors.length} editores · ${viewersList.length} leitores`;
+  }
+
+  function userRow(u, isViewer) {
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${u.color};flex-shrink:0"></div>
+      <span style="font-size:12px;color:var(--on-surface);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.name}</span>
+      ${isViewer ? '<span style="font-size:9px;background:#fff3cd;color:#7c5800;padding:1px 6px;border-radius:8px;font-weight:600">LEITOR</span>' : ''}
+    </div>`;
+  }
+
+  function setReadOnly(readonly) {
+    document.getElementById('readonlyOverlay').classList.toggle('active', readonly);
+    quill.enable(!readonly);
+    document.getElementById('toolbar').style.opacity = readonly ? '0.4' : '1';
+    document.getElementById('toolbar').style.pointerEvents = readonly ? 'none' : '';
+  }
+
+  function showModeBanner(type, message) {
+    const banner = document.getElementById('modeBanner');
+    banner.className = `mode-banner ${type}`;
+    document.getElementById('modeBannerText').textContent = message;
+    // Auto-hide após 8 segundos
+    setTimeout(() => banner.style.opacity = '0.3', 8000);
+  }
+
+  function updateStatusBar(editors, viewers) {
+    document.getElementById('statusOnline').textContent = `${editors} editores · ${viewers} leitores`;
+  }
+
+  // ── REMOTE CURSORS ──
+  const cursors = {};
+  function renderRemoteCursor(user, index, length, color) {
+    if (cursors[user]) cursors[user].remove();
+    try {
+      const bounds = quill.getBounds(index, length);
+      const paper  = document.querySelector('.paper');
+      const el = document.createElement('div');
+      el.className = 'remote-cursor';
+      el.style.cssText = `left:${bounds.left + 96}px;top:${bounds.top + 80}px`;
+      el.innerHTML = `<div class="remote-cursor-caret" style="background:${color}"></div>
+        <div class="remote-cursor-label" style="background:${color}">${user.split(' ')[0]}</div>`;
+      paper.appendChild(el);
+      cursors[user] = el;
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 3000);
+    } catch(e) {}
+  }
+
+  // ── STATUS ──
+  function updateStatus(online) {
+    const dot  = document.querySelector('.online-dot');
+    const text = document.getElementById('statusSync');
+    dot.style.background = online ? '#69f0ae' : '#f44336';
+    document.getElementById('statusOnline').textContent = online ? 'Ligado' : 'Desligado';
+    text.textContent = online ? 'Sincronizado' : 'Offline';
+  }
+
+  // ── SIDEBAR ──
+  let sidebarOpen = true;
+  function toggleSidebar() {
+    sidebarOpen = !sidebarOpen;
+    document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+  }
+
+  // ── FOCUS MODE ──
+  let focusMode = false;
+  // ── QUEBRA DE PÁGINA ──
+  document.getElementById('btnPageBreak').addEventListener('click', () => {
+    const range = quill.getSelection(true);
+    quill.insertEmbed(range.index, 'pageBreak', true, 'user');
+    quill.insertText(range.index + 1, '\n', 'user');
+    quill.setSelection(range.index + 2, 0, 'user');
+    showToast('Quebra de página inserida');
+  });
+
+  // ── AUTORIA AUTOMÁTICA ──
+  // Sempre que o próprio utilizador escreve, marca esse trecho com o seu nome
+  // (usado só para o tooltip ao passar o rato — não aparece visualmente no texto).
+  quill.on('text-change', (delta, oldDelta, source) => {
+    if (source !== 'user') return;
+    let index = 0;
+    delta.ops.forEach(op => {
+      if (op.retain) {
+        index += op.retain;
+      } else if (typeof op.insert === 'string') {
+        quill.formatText(index, op.insert.length, 'author', myName, 'silent');
+        index += op.insert.length;
+      } else if (op.insert) {
+        index += 1; // embeds (imagens, quebras de página, etc.)
+      }
+    });
+  });
+
+  // ── TOOLTIP DE AUTORIA ──
+  const authorTooltip = document.getElementById('authorTooltip');
+  const authorTooltipText = document.getElementById('authorTooltipText');
+  quill.root.addEventListener('mousemove', (e) => {
+    const el = e.target.closest('[data-author]');
+    if (!el || el.closest('[data-comment-id]')) { authorTooltip.classList.remove('show'); return; }
+    authorTooltipText.textContent = `Escrito por ${el.getAttribute('data-author')}`;
+    authorTooltip.style.left = (e.clientX + 14) + 'px';
+    authorTooltip.style.top  = (e.clientY + 14) + 'px';
+    authorTooltip.classList.add('show');
+  });
+  quill.root.addEventListener('mouseleave', () => authorTooltip.classList.remove('show'));
+
+  // ── COMENTÁRIOS ──
+  let comments = [];
+  let pendingRange = null;
+
+  document.getElementById('btnComment').addEventListener('click', () => {
+    const range = quill.getSelection();
+    if (!range || range.length === 0) {
+      showToast('Seleciona o texto que queres comentar primeiro');
+      return;
+    }
+    pendingRange = range;
+    const bounds = quill.getBounds(range.index, range.length);
+    const editorRect = quill.root.getBoundingClientRect();
+    const popover = document.getElementById('commentPopover');
+    popover.style.left = Math.min(editorRect.left + bounds.left, window.innerWidth - 280) + 'px';
+    popover.style.top  = (editorRect.top + bounds.bottom + 8) + 'px';
+    popover.classList.add('show');
+    document.getElementById('commentInput').value = '';
+    setTimeout(() => document.getElementById('commentInput').focus(), 50);
+  });
+
+  function closeCommentPopover() {
+    document.getElementById('commentPopover').classList.remove('show');
+    pendingRange = null;
+  }
+
+  async function submitComment() {
+    const text = document.getElementById('commentInput').value.trim();
+    if (!text || !pendingRange) return;
+
+    const quote = quill.getText(pendingRange.index, pendingRange.length);
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ text, quote }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const comment = await res.json();
+
+      quill.formatText(pendingRange.index, pendingRange.length, 'commentId', comment.id, 'user');
+      comments.push(comment);
+      renderComments();
+      closeCommentPopover();
+      showToast('Comentário adicionado');
+      if (socket) socket.emit('comment-sync', { action: 'add', comment, rangeIndex: pendingRange.index, rangeLength: pendingRange.length });
+    } catch (err) {
+      console.error('[Comments] Falha ao comentar:', err.message);
+      showToast('Erro ao adicionar comentário');
+    }
+  }
+
+  function renderComments() {
+    const list = document.getElementById('commentsList');
+    if (!comments.length) {
+      list.innerHTML = '<div class="comment-empty">Sem comentários. Seleciona texto e clica em 💬 para comentar.</div>';
+      return;
+    }
+    // Não resolvidos primeiro
+    const sorted = [...comments].sort((a, b) => (a.resolved === b.resolved) ? 0 : a.resolved ? 1 : -1);
+    list.innerHTML = sorted.map(c => `
+      <div class="comment-item ${c.resolved ? 'resolved' : ''}" onclick="scrollToComment('${c.id}')">
+        <div class="comment-item-quote">"${(c.quote || '').substring(0, 60)}"</div>
+        <div class="comment-item-text">${c.text}</div>
+        <div class="comment-item-meta">
+          <span>${c.author_name || c.authorName || 'Alguém'}</span>
+          <div class="comment-item-actions">
+            <button onclick="event.stopPropagation();toggleResolveComment('${c.id}', ${!c.resolved})" title="${c.resolved ? 'Reabrir' : 'Resolver'}">
+              <span class="material-symbols-outlined" style="font-size:15px">${c.resolved ? 'undo' : 'check'}</span>
+            </button>
+            <button onclick="event.stopPropagation();deleteComment('${c.id}')" title="Eliminar">
+              <span class="material-symbols-outlined" style="font-size:15px">delete</span>
+            </button>
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  function scrollToComment(commentId) {
+    const el = quill.root.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.style.outline = '2px solid var(--primary)';
+    setTimeout(() => { el.style.outline = ''; }, 1200);
+  }
+
+  /** Encontra e reformata (via Quill) todos os trechos com este comment id — necessário para não corromper o modelo interno do Quill mexendo directamente no DOM. Usa source 'user' para que a alteração seja guardada, tal como qualquer outra edição. */
+  function formatCommentRanges(commentId, attribute, value) {
+    quill.root.querySelectorAll(`[data-comment-id="${commentId}"]`).forEach(node => {
+      const blot = Quill.find(node);
+      if (!blot) return;
+      const index = quill.getIndex(blot);
+      quill.formatText(index, blot.length(), attribute, value, 'user');
+    });
+  }
+
+  async function toggleResolveComment(commentId, resolved) {
+    try {
+      const res = await fetch(`${API}/comments/${commentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ resolved }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      formatCommentRanges(commentId, 'commentResolved', resolved ? 'true' : null);
+      const c = comments.find(x => x.id === commentId);
+      if (c) c.resolved = resolved;
+      renderComments();
+      if (socket) socket.emit('comment-sync', { action: 'resolve', commentId, resolved });
+    } catch (err) {
+      console.error('[Comments] Falha ao resolver:', err.message);
+      showToast('Erro ao actualizar o comentário');
+    }
+  }
+
+  async function deleteComment(commentId) {
+    if (!confirm('Eliminar este comentário?')) return;
+    try {
+      const res = await fetch(`${API}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      formatCommentRanges(commentId, 'commentId', null);
+      comments = comments.filter(x => x.id !== commentId);
+      renderComments();
+      showToast('Comentário eliminado');
+      if (socket) socket.emit('comment-sync', { action: 'delete', commentId });
+    } catch (err) {
+      console.error('[Comments] Falha ao eliminar:', err.message);
+      showToast('Erro ao eliminar o comentário');
+    }
+  }
+
+  async function loadComments() {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/comments`, {
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      comments = await res.json();
+      renderComments();
+    } catch (err) {
+      console.warn('[Comments] Falha ao carregar:', err.message);
+    }
+  }
+
+  function toggleFocus() {
+    focusMode = !focusMode;
+    document.querySelector('.statusbar').style.display = focusMode ? 'none' : '';
+    document.getElementById('sidebar').style.display = focusMode ? 'none' : '';
+    document.querySelector('.canvas-area').style.background = focusMode ? '#fff' : '';
+    document.querySelector('.paper').style.boxShadow = focusMode ? 'none' : '';
+    showToast(focusMode ? 'Modo de foco activado' : 'Modo de foco desactivado');
+  }
+
+  // ── WINDOW CONTROLS ──
+  // Não há forma real de "minimizar" uma aba do browser por JS (bloqueado
+  // por segurança) — por isso minimizar e fechar têm o mesmo efeito prático:
+  // voltar ao sítio de onde o documento foi aberto (dashboard ou projecto).
+  // O autosave já garante que nada se perde ao sair.
+  function minimizeWindow() { window.location.href = returnUrl; }
+  function closeWindow()    { window.location.href = returnUrl; }
+
+  function toggleMaximize() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    document.getElementById('maximizeIcon').textContent =
+      document.fullscreenElement ? 'close_fullscreen' : 'open_in_full';
+  });
+
+  // ── EXPORT ──
+  function toggleExportMenu() { document.getElementById('exportMenu').classList.toggle('open'); }
+  function closeExportMenu() { document.getElementById('exportMenu').classList.remove('open'); }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('exportMenu');
+    const wrap = document.querySelector('.export-menu-wrap');
+    if (menu.classList.contains('open') && wrap && !wrap.contains(e.target)) closeExportMenu();
+  });
+
+  function getDocName() {
+    return (document.getElementById('docTitle').value || 'documento').trim().replace(/\s+/g, '_');
+  }
+
+  function exportDocx() {
+    closeExportMenu();
+    try {
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>${quill.root.innerHTML}</body></html>`;
+      const blob = htmlDocx.asBlob(html);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `${getDocName()}.docx`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('Ficheiro Word exportado');
+    } catch (err) {
+      console.error('[Export] docx falhou:', err);
+      showToast('Erro ao exportar para Word');
+    }
+  }
+
+  function exportPDF() {
+    closeExportMenu();
+    showToast('A gerar PDF...');
+    // Clona só o conteúdo do documento (sem toolbar, cursores remotos, etc.)
+    const clone = quill.root.cloneNode(true);
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:210mm;background:#fff;padding:20mm;';
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+
+    html2pdf().set({
+      margin: 0,
+      filename: `${getDocName()}.pdf`,
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    }).from(wrapper).save().then(() => {
+      wrapper.remove();
+    }).catch(err => {
+      console.error('[Export] pdf falhou:', err);
+      showToast('Erro ao exportar para PDF');
+      wrapper.remove();
+    });
+  }
+
+  // ── SHARE ──
+  function toggleSharePopover() {
+    const popover = document.getElementById('sharePopover');
+    if (popover.classList.contains('show')) { popover.classList.remove('show'); return; }
+    popover.classList.add('show');
+    loadCollaborators();
+  }
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('sharePopover');
+    const wrap = document.querySelector('.share-wrap');
+    if (popover.classList.contains('show') && wrap && !wrap.contains(e.target)) popover.classList.remove('show');
+  });
+
+  async function loadCollaborators() {
+    const list = document.getElementById('shareCollabList');
+    list.innerHTML = '<div class="share-empty">A carregar...</div>';
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(await res.text());
+      renderCollaboratorsList(await res.json());
+    } catch (err) {
+      list.innerHTML = '<div class="share-empty">Não foi possível carregar.</div>';
+    }
+  }
+
+  function renderCollaboratorsList(collabs) {
+    const list = document.getElementById('shareCollabList');
+    if (!collabs.length) {
+      list.innerHTML = '<div class="share-empty">Ainda não partilhaste este documento com ninguém.</div>';
+      return;
+    }
+    list.innerHTML = collabs.map(c => {
+      const initials = (c.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      return `
+        <div class="share-collab-row">
+          <div class="share-collab-avatar">${initials}</div>
+          <div class="share-collab-info">
+            <div class="share-collab-name">${c.name}</div>
+            <div class="share-collab-email">${c.email}</div>
+          </div>
+          <span class="share-collab-role">${c.role === 'viewer' ? 'Leitor' : 'Editor'}</span>
+          <button onclick="removeCollaborator('${c.user_id}')" title="Remover acesso">
+            <span class="material-symbols-outlined" style="font-size:15px">close</span>
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  async function inviteCollaborator() {
+    const email = document.getElementById('shareEmailInput').value.trim();
+    const role  = document.getElementById('shareRoleSelect').value;
+    if (!email) return showToast('Introduz um email');
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ email, role }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      document.getElementById('shareEmailInput').value = '';
+      showToast(`Documento partilhado com ${email}`);
+      loadCollaborators();
+    } catch (err) {
+      console.error('[Share] Falhou:', err.message);
+      showToast('Erro ao partilhar — confirma se o email está registado');
+    }
+  }
+
+  async function removeCollaborator(userId) {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share/${userId}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showToast('Acesso removido');
+      loadCollaborators();
+    } catch (err) {
+      showToast('Erro ao remover acesso');
+    }
+  }
+
+  function copyShareLink() {
+    navigator.clipboard?.writeText(window.location.href)
+      .then(() => showToast('Link copiado — só funciona para quem já tem acesso'));
+  }
+
+  // ── DOC TITLE ──
+  document.getElementById('docTitle').addEventListener('blur', function() {
+    document.title = this.value + ' — JI Sync';
+    showToast('Nome do documento actualizado');
+  });
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── KEYBOARD SHORTCUTS ──
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault(); saveVersion();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'F') {
+      e.preventDefault(); toggleFocus();
+    }
+  });
+
+  // ── LOAD DOCUMENT FROM API ──
+  async function loadDocument() {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return;
+      const doc = await res.json();
+
+      // Set title
+      if (doc.name) {
+        document.getElementById('docTitle').value = doc.name;
+        document.title = doc.name + ' — JI Sync';
+      }
+
+      // BD é sempre a fonte de verdade — aplica o conteúdo guardado
+      dbLoaded = true;
+      if (doc.word_html) {
+        isRemoteChange = true;
+        quill.root.innerHTML = doc.word_html;
+        isRemoteChange = false;
+        updateWordCount();
+        updateOutline();
+        setSaveStatus('saved');
+      } else {
+        // Documento novo — garante editor em branco
+        quill.setText('');
+      }
+
+      // Load versions
+      const vRes = await fetch(`${API}/documents/${roomId}/versions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        vData.forEach(v => versions.push({
+          name: `Versão ${new Date(v.created_at).toLocaleTimeString('pt', {hour:'2-digit', minute:'2-digit'})}`,
+          time: new Date(v.created_at).toLocaleDateString('pt'),
+        }));
+        renderVersions();
+      }
+    } catch (err) {
+      console.warn('[Editor] loadDocument falhou:', err.message);
+    }
+  }
+
+  // ── INIT ──
+  renderVersions();
+  updateOutline();
+  updateWordCount();
+  connectSocket();
+  loadDocument();
+  loadComments();
+
+  // Documento começa sempre em branco
+</script>
+
+<!-- COMMENT POPOVER -->
+<div class="comment-popover" id="commentPopover">
+  <textarea id="commentInput" placeholder="Escreve o teu comentário..."></textarea>
+  <div class="comment-popover-actions">
+    <button class="comment-popover-cancel" onclick="closeCommentPopover()">Cancelar</button>
+    <button class="comment-popover-submit" onclick="submitComment()">Comentar</button>
+  </div>
+</div>
+
+<!-- AUTHOR TOOLTIP -->
+<div class="author-tooltip" id="authorTooltip">
+  <span class="material-symbols-outlined">edit_note</span>
+  <span id="authorTooltipText"></span>
+</div>
+
+</body>
+</html>

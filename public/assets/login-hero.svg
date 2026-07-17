@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <rect width="1200" height="800" fill="#0d47b5"/>
+  <g fill="#ffffff" opacity="0.08">
+    <circle cx="200" cy="200" r="160" />
+    <circle cx="1000" cy="600" r="220" />
+  </g>
+  <text x="80" y="420" font-family="Plus Jakarta Sans, Arial" font-size="56" fill="#fff">JI SYNC — Visual</text>
+</svg>

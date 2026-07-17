@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="pt" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Projecto | JI Sync</title>
+<link rel="stylesheet" href="/css/global-font.css" />
+<style>
+  :root {
+    --primary:       #003289;
+    --primary-dim:     #0D47B5;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --error:          #ba1a1a;
+    --tertiary:       #6d5e00;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,250,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 32px; height: 60px;
+  }
+  .topbar-brand {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--on-surface);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .topbar-search {
+    flex: 1; max-width: 520px; margin: 0 auto;
+    position: relative;
+  }
+  .topbar-search input {
+    width: 100%;
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    padding: 9px 16px 9px 42px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .topbar-search input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .topbar-search .search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--outline); font-size: 20px; pointer-events: none;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+  .topbar-icon-group { display: flex; align-items: center; gap: 4px; }
+  .topbar-divider { width: 1px; height: 22px; background: var(--outline-var); }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .avatar:hover { opacity: 0.85; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── USER MENU ── */
+  .topbar-actions { position: relative; }
+  .user-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    display: none;
+    animation: menuIn 0.15s ease;
+  }
+  .user-menu.open { display: block; }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .user-menu-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+  }
+  .user-menu-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--label); font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .user-menu-name {
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+  }
+  .user-menu-role {
+    font-size: 11px; color: var(--outline);
+    font-family: var(--sans);
+  }
+  .user-menu-divider {
+    height: 1px; background: var(--outline-var); margin: 0 12px;
+  }
+  .user-menu-item {
+    width: 100%; padding: 10px 16px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--sans); font-size: 13px;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+    text-align: left;
+  }
+  .user-menu-item:last-child { border-radius: 0 0 8px 8px; margin-bottom: 4px; }
+  .user-menu-item:hover { background: var(--surface-low); color: var(--on-surface); }
+  .user-menu-item.danger { color: #ba1a1a; }
+  .user-menu-item.danger:hover { background: #ffdad6; }
+
+  /* ── HERO STRIP ── */
+  .hero {
+    background: var(--primary);
+    padding: 40px 32px 36px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px;
+  }
+  .hero-text h1 {
+    font-family: var(--serif);
+    font-size: 36px; font-weight: 400;
+    color: var(--on-primary);
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .hero-text p {
+    color: rgba(255,255,255,0.75);
+    font-size: 14px; line-height: 1.5;
+    max-width: 420px;
+  }
+  .hero-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #ffffff;
+    color: var(--primary);
+    border: none; border-radius: 2px;
+    padding: 12px 24px;
+    font-family: var(--label);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .hero-btn:hover { opacity: 0.92; }
+  .hero-btn:active { transform: scale(0.98); }
+
+  /* ── QUICK NEW ── */
+  .quick-section {
+    padding: 32px 32px 0;
+    border-bottom: 1px solid var(--outline-var);
+    background: var(--surface-low);
+  }
+  .section-label {
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--outline);
+    margin-bottom: 16px;
+  }
+  .quick-grid {
+    display: flex; gap: 12px; overflow-x: auto;
+    padding-bottom: 24px;
+    scrollbar-width: none;
+  }
+  .quick-grid::-webkit-scrollbar { display: none; }
+  .quick-card {
+    flex-shrink: 0;
+    width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
+    text-align: left;
+  }
+  .quick-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .quick-card-thumb {
+    height: 96px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+  }
+  .quick-card-thumb .material-symbols-outlined {
+    font-size: 36px;
+  }
+  .thumb-word   { background: #e8f0fe; color: #3366cc; }
+  .thumb-excel  { background: #e6f4ea; color: #1a7340; }
+  .thumb-blank  { background: var(--surface-low); color: var(--outline); }
+  .quick-card-label {
+    padding: 10px 12px;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .quick-card-sub {
+    padding: 0 12px 10px;
+    font-size: 11px;
+    color: var(--outline);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 32px; flex: 1; }
+
+  .docs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+  }
+  .view-tabs { display: flex; gap: 2px; }
+  .view-tab {
+    background: none; border: none; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--outline);
+    transition: background 0.15s, color 0.15s;
+  }
+  .view-tab.active, .view-tab:hover {
+    background: var(--surface-high);
+    color: var(--on-surface);
+  }
+
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    background: none;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface-var);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .filter-chip.active, .filter-chip:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
+  }
+
+  /* ── GRID VIEW ── */
+  .docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .doc-card {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .doc-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+    transform: translateY(-2px);
+  }
+  .doc-card:hover .doc-card-actions { opacity: 1; }
+  .doc-preview {
+    height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+    position: relative; overflow: hidden;
+  }
+  .doc-preview-word  { background: #f0f4ff; }
+  .doc-preview-excel { background: #f0f9f2; }
+  .doc-preview-lines {
+    position: absolute; inset: 12px 16px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .doc-line {
+    height: 6px; border-radius: 2px;
+    background: rgba(51,102,204,0.15);
+  }
+  .doc-line-dark { background: rgba(51,102,204,0.28); }
+  .doc-line-short { width: 60%; }
+  .doc-line-med   { width: 80%; }
+  .doc-line-full  { width: 100%; }
+
+  .doc-grid-lines {
+    position: absolute; inset: 8px;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .doc-grid-cell {
+    background: rgba(26,115,64,0.12);
+    border-radius: 1px;
+  }
+  .doc-grid-cell.header { background: rgba(26,115,64,0.28); }
+
+  .doc-card-meta {
+    padding: 12px 14px;
+  }
+  .doc-card-name {
+    font-family: var(--sans);
+    font-size: 13px; font-weight: 500;
+    color: var(--on-surface);
+    margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-card-date {
+    font-size: 11px;
+    color: var(--outline);
+  }
+  .doc-card-editor {
+    font-size: 11px;
+    color: var(--outline);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 2px;
+  }
+  .doc-card-editor .material-symbols-outlined { font-size: 12px; }
+
+  /* ── HISTORY MODAL ── */
+  .history-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--surface-high);
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 600;
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name {
+    font-size: 13px; font-weight: 500; color: var(--on-surface);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-time { font-size: 11px; color: var(--outline); }
+  .history-empty {
+    text-align: center; padding: 24px 0; color: var(--outline); font-size: 13px;
+  }
+  .doc-type-badge {
+    position: absolute; top: 8px; left: 8px;
+    padding: 2px 8px; border-radius: 2px;
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .badge-word  { background: #3366cc; color: #fff; }
+  .badge-excel { background: #1a7340; color: #fff; }
+  .doc-card-actions {
+    position: absolute; top: 8px; right: 8px;
+    opacity: 0; transition: opacity 0.2s;
+    display: flex; gap: 4px;
+  }
+  .doc-action-btn {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--on-surface-var);
+    font-size: 16px;
+    transition: background 0.15s;
+  }
+  .doc-action-btn:hover { background: #fff; color: var(--primary); }
+
+  /* ── LIST VIEW ── */
+  .docs-list { display: none; }
+  .docs-list.active { display: block; }
+  .docs-grid.active { display: grid; }
+  .docs-grid.hidden  { display: none; }
+
+  .list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    font-family: var(--label);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--outline);
+  }
+  .list-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .list-row:hover { background: var(--surface-low); }
+  .list-row:last-child { border-bottom: none; }
+  .list-name {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .list-icon {
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .list-icon-word  { background: #e8f0fe; color: #3366cc; }
+  .list-icon-excel { background: #e6f4ea; color: #1a7340; }
+  .list-meta {
+    font-size: 13px; color: var(--on-surface-var);
+  }
+  .list-actions {
+    display: flex; gap: 4px; justify-content: flex-end;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .list-row:hover .list-actions { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px 32px; text-align: center;
+    color: var(--outline);
+  }
+  .empty-state .material-symbols-outlined { font-size: 64px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--serif); font-size: 22px; color: var(--on-surface-var); margin-bottom: 8px; }
+  .empty-state p  { font-size: 14px; max-width: 300px; line-height: 1.6; }
+
+  /* ── CONFIRM MODAL ── */
+  .confirm-modal {
+    text-align: center;
+    max-width: 380px;
+  }
+  .confirm-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #ffdad6;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .confirm-icon .material-symbols-outlined {
+    font-size: 32px; color: #ba1a1a;
+  }
+  .confirm-modal h2 {
+    font-size: 20px; margin-bottom: 10px;
+  }
+  .confirm-message {
+    font-family: var(--sans);
+    font-size: 14px; color: var(--on-surface-var);
+    line-height: 1.6; margin-bottom: 4px;
+  }
+  .confirm-doc-name {
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 12px 0 0;
+    display: block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .btn-danger {
+    padding: 10px 24px; border-radius: 2px;
+    background: #ba1a1a; border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: #ffffff; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-danger:hover { background: #93000a; }
+  .btn-danger:active { transform: scale(0.98); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(27,28,29,0.4);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 100%; max-width: 440px;
+    padding: 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal h2 {
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .modal-field { margin-bottom: 20px; }
+  .modal-label {
+    display: block;
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--on-surface-var);
+    margin-bottom: 8px;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .modal-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .modal-type-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .modal-type-option {
+    border: 2px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .modal-type-option:hover { border-color: var(--primary); }
+  .modal-type-option.selected { border-color: var(--primary); background: #f0f4ff; }
+  .modal-type-option .material-symbols-outlined { font-size: 32px; display: block; margin-bottom: 8px; }
+  .modal-type-option.word-opt  .material-symbols-outlined { color: #3366cc; }
+  .modal-type-option.excel-opt .material-symbols-outlined { color: #1a7340; }
+  .modal-type-label { font-size: 13px; font-weight: 500; color: var(--on-surface); }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+  .btn-ghost {
+    padding: 10px 20px; border-radius: 2px;
+    background: none; border: 1px solid var(--outline-var);
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface-var); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: var(--surface-high); }
+  .btn-primary {
+    padding: 10px 24px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--primary-dim); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--on-surface); color: var(--surface);
+    padding: 12px 24px; border-radius: 24px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 300;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease both; }
+  .delay-1 { animation-delay: 0.05s; }
+  .delay-2 { animation-delay: 0.10s; }
+  .delay-3 { animation-delay: 0.15s; }
+  .delay-4 { animation-delay: 0.20s; }
+  .delay-5 { animation-delay: 0.25s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .hero { flex-direction: column; align-items: flex-start; }
+    .topbar-search { display: none; }
+    .docs-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .list-header, .list-row { grid-template-columns: 2fr 1fr 60px; }
+    .list-header .col-owner, .list-row .col-owner { display: none; }
+    .main, .quick-section, .hero { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+<style>
+  /* ── BREADCRUMB ── */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 6px;
+    padding: 16px 32px 16px; font-size: 13px; color: var(--outline);
+  }
+  .breadcrumb a { color: var(--outline); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--primary); }
+  .breadcrumb .current { color: var(--on-surface); font-weight: 600; }
+  .breadcrumb .material-symbols-outlined { font-size: 14px; }
+
+  /* ── FOLDER CARDS ── */
+  .folder-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px; padding: 0 32px; margin-bottom: 28px;
+  }
+  .folder-card {
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; position: relative;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .folder-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); transform: translateY(-1px); }
+  .folder-card .material-symbols-outlined.folder-icon { color: #f4b400; font-size: 26px; }
+  .folder-card-name { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .folder-card-count { font-size: 10px; color: var(--outline); }
+  .folder-card-actions { display: none; }
+  .folder-card:hover .folder-card-actions { display: flex; gap: 2px; }
+
+  /* ── MEMBERS ── */
+  .member-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 4px; border-bottom: 1px solid var(--surface-high);
+  }
+  .member-row:last-child { border-bottom: none; }
+  .member-avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 600;
+  }
+  .member-info { flex: 1; min-width: 0; }
+  .member-name { font-size: 13px; font-weight: 500; color: var(--on-surface); }
+  .member-email { font-size: 11px; color: var(--outline); }
+  .member-role {
+    font-size: 9px; font-weight: 700; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 8px;
+    background: var(--surface-high); color: var(--outline);
+  }
+  .member-role.owner { background: #eef2fc; color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <a class="topbar-brand" href="projects.html">JI Sync</a>
+  <div class="topbar-search">
+    <span class="material-symbols-outlined search-icon">search</span>
+    <input type="text" id="searchInput" placeholder="Pesquisar nesta pasta..." oninput="render()"/>
+  </div>
+  <div class="topbar-actions">
+    <div class="topbar-icon-group">
+      <button class="icon-btn" title="Membros do projecto" onclick="openMembersModal()">
+        <span class="material-symbols-outlined" style="font-size:20px">group</span>
+      </button>
+      <a class="icon-btn" href="dashboard.html" title="Os meus documentos" style="text-decoration:none;display:flex;align-items:center;justify-content:center">
+        <span class="material-symbols-outlined" style="font-size:20px">description</span>
+      </a>
+    </div>
+    <div class="topbar-divider"></div>
+    <div class="avatar" title="Perfil" id="avatarBtn" onclick="toggleUserMenu()">VM</div>
+    <div class="user-menu" id="userMenu">
+      <div class="user-menu-header">
+        <div class="user-menu-avatar" id="menuAvatar">VM</div>
+        <div>
+          <div class="user-menu-name" id="menuName">Utilizador</div>
+          <div class="user-menu-role">Membro</div>
+        </div>
+      </div>
+      <div class="user-menu-divider"></div>
+      <button class="user-menu-item" onclick="window.location.href='projects.html'">
+        <span class="material-symbols-outlined" style="font-size:18px">folder</span>
+        Todos os projectos
+      </button>
+      <button class="user-menu-item danger" onclick="logout()">
+        <span class="material-symbols-outlined" style="font-size:18px">logout</span>
+        Terminar sessão
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- BREADCRUMB -->
+<div class="breadcrumb" id="breadcrumb"></div>
+
+<!-- HERO -->
+<div class="hero fade-up">
+  <div class="hero-text">
+    <h1 id="projectTitle">Projecto</h1>
+    <p id="projectDesc">&nbsp;</p>
+  </div>
+  <div style="display:flex;gap:10px">
+    <button class="hero-btn" style="background:var(--surface-high);color:var(--on-surface)" onclick="openFolderModal()">
+      <span class="material-symbols-outlined" style="font-size:18px">create_new_folder</span>
+      Nova pasta
+    </button>
+    <button class="hero-btn" onclick="openModal()">
+      <span class="material-symbols-outlined" style="font-size:18px">add</span>
+      Novo documento
+    </button>
+  </div>
+</div>
+
+<!-- FOLDERS (só na raiz do projecto) -->
+<div id="foldersSection" style="margin-top:28px">
+  <div style="padding:0 32px;margin-bottom:12px">
+    <div class="section-label">Pastas</div>
+  </div>
+  <div class="folder-grid" id="folderGrid"></div>
+</div>
+
+<!-- DOCUMENTS -->
+<main class="main">
+  <div class="docs-header fade-up delay-2">
+    <div>
+      <div class="section-label" style="margin-bottom:4px" id="docsSectionLabel">Documentos</div>
+      <div style="font-size:13px;color:var(--outline)" id="docCount">0 documentos</div>
+    </div>
+  </div>
+
+  <div class="docs-grid active fade-up delay-3" id="docsGrid"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h3>Ainda não há documentos aqui</h3>
+    <p>Cria o primeiro documento desta pasta.</p>
+  </div>
+</main>
+
+<!-- MODAL NOVO DOCUMENTO -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2>Novo documento</h2>
+    <div class="modal-field">
+      <label class="modal-label">Tipo de documento</label>
+      <div class="modal-type-grid">
+        <div class="modal-type-option word-opt selected" id="typeWord" onclick="selectType('word')">
+          <span class="material-symbols-outlined">article</span>
+          <span class="modal-type-label">Documento Word</span>
+        </div>
+        <div class="modal-type-option excel-opt" id="typeExcel" onclick="selectType('excel')">
+          <span class="material-symbols-outlined">table_chart</span>
+          <span class="modal-type-label">Folha Excel</span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" for="docNameInput">Nome do documento</label>
+      <input class="modal-input" type="text" id="docNameInput" placeholder="Nome do documento"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="submitNewDoc()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA PASTA -->
+<div class="modal-overlay" id="folderModalOverlay" onclick="closeFolderModalOutside(event)">
+  <div class="modal" style="max-width:380px">
+    <h2>Nova pasta</h2>
+    <div class="modal-field">
+      <label class="modal-label" for="folderNameInput">Nome da pasta</label>
+      <input class="modal-input" type="text" id="folderNameInput" placeholder="Ex: Contratos, Relatórios..."/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeFolderModal()">Cancelar</button>
+      <button class="btn-primary" onclick="submitFolder()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RENOMEAR -->
+<div class="modal-overlay" id="renameOverlay" onclick="closeRenameOutside(event)">
+  <div class="modal" style="max-width:400px">
+    <h2 id="renameTitle">Renomear</h2>
+    <div class="modal-field">
+      <label class="modal-label" for="renameInput">Novo nome</label>
+      <input class="modal-input" type="text" id="renameInput"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeRename()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmRename()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MEMBROS -->
+<div class="modal-overlay" id="membersOverlay" onclick="closeMembersOutside(event)">
+  <div class="modal" style="max-width:440px">
+    <h2 style="margin-bottom:16px">Membros do projecto</h2>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <input class="modal-input" type="email" id="memberEmailInput" placeholder="email@empresa.com" style="flex:1"/>
+      <button class="btn-primary" onclick="addMember()" style="white-space:nowrap">Adicionar</button>
+    </div>
+    <div id="membersList" style="max-height:320px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeMembersModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmOverlay" onclick="closeConfirmOutside(event)">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon" id="confirmIcon">
+      <span class="material-symbols-outlined">delete</span>
+    </div>
+    <h2 id="confirmTitle">Confirmar</h2>
+    <p id="confirmMessage" class="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-danger" id="confirmBtn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORY MODAL -->
+<div class="modal-overlay" id="historyOverlay" onclick="closeHistoryOutside(event)">
+  <div class="modal" style="max-width:440px">
+    <h2 style="margin-bottom:16px" id="historyTitle">Histórico de edições</h2>
+    <div id="historyList" style="max-height:360px;overflow-y:auto"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeHistory()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CONFIG ──
+  const API = 'http://localhost:3000';
+  const token = localStorage.getItem('ji_token');
+  const user  = JSON.parse(localStorage.getItem('ji_user') || '{}');
+  if (!token) window.location.href = 'login.html';
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectId = urlParams.get('id');
+  const folderId  = urlParams.get('folder'); // null = raiz do projecto
+  if (!projectId) window.location.href = 'projects.html';
+
+  let project = null;
+  let folders = [];
+  let docs = [];
+  let selectedType = 'word';
+
+  // ── API HELPER ──
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // ── USER MENU ──
+  function initUser() {
+    const initials = (user.initials || (user.name || 'U').substring(0,2)).toUpperCase();
+    document.getElementById('avatarBtn').textContent = initials;
+    document.getElementById('menuAvatar').textContent = initials;
+    document.getElementById('menuName').textContent = user.name || 'Utilizador';
+  }
+  function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('open'); }
+  function logout() {
+    localStorage.removeItem('ji_token'); localStorage.removeItem('ji_user');
+    sessionStorage.removeItem('ji_token');
+    window.location.href = 'login.html';
+  }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userMenu');
+    const btn  = document.getElementById('avatarBtn');
+    if (menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) menu.classList.remove('open');
+  });
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-PT', { day:'2-digit', month:'short', year:'numeric' }) +
+           ' · ' + d.toLocaleTimeString('pt-PT', { hour:'2-digit', minute:'2-digit' });
+  }
+
+  // ── LOAD ──
+  async function loadAll() {
+    try {
+      project = await apiFetch(`/projects/${projectId}`);
+      folders = project.folders || [];
+      document.getElementById('projectTitle').textContent = project.name;
+      document.getElementById('projectDesc').textContent = project.description || 'Sem descrição.';
+
+      const qs = folderId ? `?folderId=${folderId}` : '';
+      const rawDocs = await apiFetch(`/projects/${projectId}/documents${qs}`);
+      docs = rawDocs.map(d => ({
+        id: d.id, name: d.name,
+        type: d.word_html !== null ? 'word' : 'excel',
+        date: formatDate(d.updated_at || d.created_at),
+        lastEditor: d.last_edited_by || null,
+      }));
+
+      renderBreadcrumb();
+      renderFolders();
+      render();
+    } catch (err) {
+      console.error('[Project] Falha ao carregar:', err.message);
+      if (String(err.message).includes('403')) {
+        alert('Não tens acesso a este projecto.');
+        window.location.href = 'projects.html';
+      }
+    }
+  }
+
+  function renderBreadcrumb() {
+    const currentFolder = folders.find(f => String(f.id) === String(folderId));
+    document.getElementById('breadcrumb').innerHTML = `
+      <a href="projects.html">Projectos</a>
+      <span class="material-symbols-outlined">chevron_right</span>
+      ${folderId
+        ? `<a href="project.html?id=${projectId}">${project.name}</a>
+           <span class="material-symbols-outlined">chevron_right</span>
+           <span class="current">${currentFolder ? currentFolder.name : 'Pasta'}</span>`
+        : `<span class="current">${project.name}</span>`}
+    `;
+    // Só mostra a secção de pastas quando estamos na raiz do projecto
+    document.getElementById('foldersSection').style.display = folderId ? 'none' : 'block';
+    document.getElementById('docsSectionLabel').textContent = folderId ? 'Documentos nesta pasta' : 'Documentos na raiz';
+  }
+
+  function renderFolders() {
+    if (folderId) return;
+    const grid = document.getElementById('folderGrid');
+    if (!folders.length) { grid.innerHTML = '<div style="font-size:12px;color:var(--outline);padding:8px 4px">Ainda não criaste nenhuma pasta.</div>'; return; }
+    grid.innerHTML = folders.map(f => `
+      <div class="folder-card" onclick="window.location.href='project.html?id=${projectId}&folder=${f.id}'">
+        <span class="material-symbols-outlined folder-icon">folder</span>
+        <div style="flex:1;overflow:hidden">
+          <div class="folder-card-name">${f.name}</div>
+          <div class="folder-card-count">${f.document_count} documento${f.document_count == 1 ? '' : 's'}</div>
+        </div>
+        <div class="folder-card-actions">
+          <button class="doc-action-btn" onclick="event.stopPropagation();renameFolder('${f.id}','${f.name.replace(/'/g,"\\'")}')" title="Renomear">
+            <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+          </button>
+          <button class="doc-action-btn" onclick="event.stopPropagation();deleteFolder('${f.id}','${f.name.replace(/'/g,"\\'")}')" title="Eliminar">
+            <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+          </button>
+        </div>
+      </div>`).join('');
+  }
+
+  function render() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const data = docs.filter(d => d.name.toLowerCase().includes(q));
+    document.getElementById('docCount').textContent = `${docs.length} documento${docs.length !== 1 ? 's' : ''}`;
+    document.getElementById('emptyState').style.display = data.length ? 'none' : 'flex';
+
+    document.getElementById('docsGrid').innerHTML = data.map((d,i) => `
+      <div class="doc-card fade-up" style="animation-delay:${i*0.04}s" onclick="openDoc('${d.id}','${d.type}')">
+        <div class="doc-preview doc-preview-${d.type}">
+          ${d.type === 'word' ? `
+            <div class="doc-preview-lines">
+              <div class="doc-line doc-line-dark doc-line-med"></div>
+              <div class="doc-line doc-line-full"></div>
+              <div class="doc-line doc-line-full"></div>
+              <div class="doc-line doc-line-short"></div>
+            </div>` : `
+            <div class="doc-grid-lines">
+              ${Array(16).fill(0).map((_,j) => `<div class="doc-grid-cell${j<4?' header':''}"></div>`).join('')}
+            </div>`}
+          <span class="doc-type-badge badge-${d.type}">${d.type}</span>
+          <div class="doc-card-actions">
+            <button class="doc-action-btn" onclick="event.stopPropagation();openHistory('${d.id}','${d.name}')" title="Histórico">
+              <span class="material-symbols-outlined" style="font-size:14px">history</span>
+            </button>
+            <button class="doc-action-btn" onclick="event.stopPropagation();openRenameDoc('${d.id}')" title="Renomear">
+              <span class="material-symbols-outlined" style="font-size:14px">edit</span>
+            </button>
+            <button class="doc-action-btn" onclick="event.stopPropagation();deleteDoc('${d.id}','${d.name.replace(/'/g,"\\'")}')" title="Eliminar">
+              <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+            </button>
+          </div>
+        </div>
+        <div class="doc-card-meta">
+          <div class="doc-card-name" title="${d.name}">${d.name}</div>
+          <div class="doc-card-date">${d.date}</div>
+          ${d.lastEditor ? `<div class="doc-card-editor"><span class="material-symbols-outlined">edit_note</span>${d.lastEditor}</div>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function openDoc(id, type) {
+    const back = `project.html?id=${projectId}${folderId ? '&folder=' + folderId : ''}`;
+    window.location.href = `${type === 'excel' ? 'excel.html' : 'editor.html'}?id=${id}&return=${encodeURIComponent(back)}`;
+  }
+
+  // ── NOVO DOCUMENTO ──
+  function openModal() {
+    document.getElementById('docNameInput').value = '';
+    selectType('word');
+    document.getElementById('modalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('docNameInput').focus(), 50);
+  }
+  function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+  function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+  function selectType(type) {
+    selectedType = type;
+    document.getElementById('typeWord').classList.toggle('selected', type === 'word');
+    document.getElementById('typeExcel').classList.toggle('selected', type === 'excel');
+  }
+  async function submitNewDoc() {
+    const name = document.getElementById('docNameInput').value.trim();
+    if (!name) return showToast('O nome do documento é obrigatório');
+    try {
+      const doc = await apiFetch(`/projects/${projectId}/documents`, {
+        method: 'POST',
+        body: JSON.stringify({ name, type: selectedType, folderId: folderId || null }),
+      });
+      closeModal();
+      showToast(`"${name}" criado`);
+      setTimeout(() => openDoc(doc.id, selectedType), 500);
+    } catch (err) {
+      console.error('[Project] Criar documento falhou:', err.message);
+      showToast('Erro ao criar o documento');
+    }
+  }
+
+  // ── NOVA PASTA ──
+  function openFolderModal() {
+    document.getElementById('folderNameInput').value = '';
+    document.getElementById('folderModalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('folderNameInput').focus(), 50);
+  }
+  function closeFolderModal() { document.getElementById('folderModalOverlay').classList.remove('open'); }
+  function closeFolderModalOutside(e) { if (e.target === document.getElementById('folderModalOverlay')) closeFolderModal(); }
+  async function submitFolder() {
+    const name = document.getElementById('folderNameInput').value.trim();
+    if (!name) return showToast('O nome da pasta é obrigatório');
+    try {
+      await apiFetch(`/projects/${projectId}/folders`, { method: 'POST', body: JSON.stringify({ name }) });
+      closeFolderModal();
+      showToast(`Pasta "${name}" criada`);
+      loadAll();
+    } catch (err) {
+      console.error('[Project] Criar pasta falhou:', err.message);
+      showToast('Erro ao criar a pasta');
+    }
+  }
+
+  function renameFolder(id, currentName) {
+    openRename('Renomear pasta', currentName, async (newName) => {
+      try {
+        await apiFetch(`/folders/${id}`, { method: 'PATCH', body: JSON.stringify({ name: newName }) });
+        showToast('Pasta renomeada');
+        loadAll();
+      } catch (err) {
+        showToast('Erro ao renomear a pasta');
+      }
+    });
+  }
+
+  function deleteFolder(id, name) {
+    openConfirm({
+      title: 'Eliminar pasta',
+      message: `Eliminar "${name}"? Os documentos lá dentro não são apagados — ficam na raiz do projecto.`,
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/folders/${id}`, { method: 'DELETE' });
+          showToast('Pasta eliminada');
+          loadAll();
+        } catch (err) {
+          showToast('Erro ao eliminar a pasta');
+        }
+      },
+    });
+  }
+
+  // ── RENOMEAR (genérico: pastas e documentos) ──
+  let renameCallback = null;
+  function openRename(title, currentValue, onSave) {
+    document.getElementById('renameTitle').textContent = title;
+    document.getElementById('renameInput').value = currentValue;
+    renameCallback = onSave;
+    document.getElementById('renameOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('renameInput').select(), 50);
+  }
+  function closeRename() { document.getElementById('renameOverlay').classList.remove('open'); renameCallback = null; }
+  function closeRenameOutside(e) { if (e.target === document.getElementById('renameOverlay')) closeRename(); }
+  function confirmRename() {
+    const value = document.getElementById('renameInput').value.trim();
+    if (!value) return;
+    const cb = renameCallback;
+    closeRename();
+    if (cb) cb(value);
+  }
+
+  function openRenameDoc(id) {
+    const doc = docs.find(d => String(d.id) === String(id));
+    if (!doc) return;
+    openRename('Renomear documento', doc.name, async (newName) => {
+      try {
+        await apiFetch(`/documents/${id}`, { method: 'PATCH', body: JSON.stringify({ name: newName }) });
+        showToast('Documento renomeado');
+        loadAll();
+      } catch (err) {
+        showToast('Erro ao renomear o documento');
+      }
+    });
+  }
+
+  // ── ELIMINAR DOCUMENTO ──
+  function deleteDoc(id, name) {
+    openConfirm({
+      title: 'Eliminar documento',
+      message: `Tens a certeza que queres eliminar "${name}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/documents/${id}`, { method: 'DELETE' });
+          showToast(`"${name}" eliminado`);
+          loadAll();
+        } catch (err) {
+          showToast('Erro ao eliminar o documento');
+        }
+      },
+    });
+  }
+
+  // ── HISTÓRICO ──
+  async function openHistory(docId, docName) {
+    document.getElementById('historyTitle').textContent = `Histórico — ${docName}`;
+    document.getElementById('historyList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--outline);font-size:13px">A carregar...</div>';
+    document.getElementById('historyOverlay').classList.add('open');
+    try {
+      const versions = await apiFetch(`/documents/${docId}/versions`);
+      if (!versions.length) {
+        document.getElementById('historyList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--outline);font-size:13px">Ainda não há alterações registadas.</div>';
+        return;
+      }
+      document.getElementById('historyList').innerHTML = versions.map((v,i) => {
+        const name = v.editor_name || 'Sistema';
+        const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+        return `<div class="member-row">
+          <div class="member-avatar">${initials}</div>
+          <div class="member-info">
+            <div class="member-name">${name}</div>
+            <div class="member-email">${formatDate(v.created_at)}${i===0?' · versão atual':''}</div>
+          </div>
+          ${i===0 ? '' : `<button class="doc-action-btn" onclick="restoreVersion('${docId}','${v.id}','${docName}')" title="Restaurar"><span class="material-symbols-outlined" style="font-size:14px">restore</span></button>`}
+        </div>`;
+      }).join('');
+    } catch (err) {
+      document.getElementById('historyList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--outline);font-size:13px">Não foi possível carregar o histórico.</div>';
+    }
+  }
+  function closeHistory() { document.getElementById('historyOverlay').classList.remove('open'); }
+  function closeHistoryOutside(e) { if (e.target === document.getElementById('historyOverlay')) closeHistory(); }
+
+  function restoreVersion(docId, versionId, docName) {
+    openConfirm({
+      title: 'Restaurar versão',
+      message: `Repor "${docName}" para este ponto no tempo? A versão atual não se perde, fica no histórico.`,
+      confirmLabel: 'Restaurar',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/documents/${docId}/versions/restore/${versionId}`, { method: 'POST' });
+          closeHistory();
+          showToast('Versão restaurada');
+          loadAll();
+        } catch (err) {
+          showToast('Erro ao restaurar a versão');
+        }
+      },
+    });
+  }
+
+  // ── MEMBROS ──
+  async function openMembersModal() {
+    document.getElementById('membersOverlay').classList.add('open');
+    document.getElementById('memberEmailInput').value = '';
+    renderMembers();
+  }
+  function closeMembersModal() { document.getElementById('membersOverlay').classList.remove('open'); }
+  function closeMembersOutside(e) { if (e.target === document.getElementById('membersOverlay')) closeMembersModal(); }
+
+  function renderMembers() {
+    const members = project.members || [];
+    document.getElementById('membersList').innerHTML = members.map(m => {
+      const initials = m.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div class="member-row">
+        <div class="member-avatar">${initials}</div>
+        <div class="member-info">
+          <div class="member-name">${m.name}</div>
+          <div class="member-email">${m.email}</div>
+        </div>
+        <span class="member-role ${m.role === 'owner' ? 'owner' : ''}">${m.role === 'owner' ? 'Dono' : 'Membro'}</span>
+        ${m.role !== 'owner' ? `<button class="doc-action-btn" onclick="removeMember('${m.id}','${m.name.replace(/'/g,"\\'")}')" title="Remover">
+          <span class="material-symbols-outlined" style="font-size:14px">close</span>
+        </button>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  async function addMember() {
+    const email = document.getElementById('memberEmailInput').value.trim();
+    if (!email) return showToast('Introduz um email');
+    try {
+      await apiFetch(`/projects/${projectId}/members`, { method: 'POST', body: JSON.stringify({ email }) });
+      document.getElementById('memberEmailInput').value = '';
+      showToast('Membro adicionado');
+      project = await apiFetch(`/projects/${projectId}`);
+      renderMembers();
+    } catch (err) {
+      console.error('[Project] Adicionar membro falhou:', err.message);
+      showToast('Não foi possível adicionar — confirma se o email está registado');
+    }
+  }
+
+  function removeMember(userId, name) {
+    openConfirm({
+      title: 'Remover membro',
+      message: `Remover "${name}" deste projecto? Deixa de conseguir aceder aos documentos do projecto.`,
+      confirmLabel: 'Remover',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/projects/${projectId}/members/${userId}`, { method: 'DELETE' });
+          showToast('Membro removido');
+          project = await apiFetch(`/projects/${projectId}`);
+          renderMembers();
+        } catch (err) {
+          showToast('Erro ao remover o membro');
+        }
+      },
+    });
+  }
+
+  // ── CONFIRM MODAL (genérico) ──
+  let confirmCallback = null;
+  function openConfirm({ title, message, confirmLabel = 'Confirmar', onConfirm }) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const btn = document.getElementById('confirmBtn');
+    btn.textContent = confirmLabel;
+    confirmCallback = onConfirm;
+    btn.onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+  function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+  function closeConfirmOutside(e) { if (e.target === document.getElementById('confirmOverlay')) closeConfirm(); }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); closeFolderModal(); closeRename(); closeConfirm(); closeHistory(); closeMembersModal(); }
+    if (e.key === 'Enter' && document.getElementById('renameOverlay').classList.contains('open')) confirmRename();
+  });
+
+  // ── INIT ──
+  initUser();
+  loadAll();
+</script>
+</body>
+</html>
+<!-- Footer -->
+<footer style="background:var(--surface);border-top:1px solid var(--outline-var);padding:24px 32px;margin-top:24px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:360px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="/assets/footer-logo.svg" alt="JI SYNC" style="height:32px;filter:grayscale(1);"/>
+        <span style="font-weight:700;color:var(--on-surface);">JI SYNC</span>
+      </div>
+      <p style="color:var(--on-surface-var);margin:0;">A plataforma de sincronização de documentos feita para o futuro do trabalho colaborativo.</p>
+      <p style="color:var(--outline);font-size:12px;margin:0;">© 2026 JI SYNC. Todos os direitos reservados.</p>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Legal</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Privacidade</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Termos de Serviço</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Recursos</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Blog</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Segurança</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Contacto</a>
+      </div>
+    </div>
+  </div>
+</footer>

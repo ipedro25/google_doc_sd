@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Criar Conta | JI Sync</title>
+<link rel="stylesheet" href="/css/global-font.css" />
+<style>
+  :root {
+    --primary:      #094cb2;
+    --primary-mid:  #3366cc;
+    --on-primary:   #ffffff;
+    --surface:      #faf9fa;
+    --surface-low:  #f5f3f4;
+    --surface-high: #e9e8e9;
+    --on-surface:   #1b1c1d;
+    --on-surface-v: #434653;
+    --outline:      #737784;
+    --outline-var:  #c3c6d5;
+    --error:        #ba1a1a;
+    --error-bg:     #ffdad6;
+    --success:      #1a7340;
+    --success-bg:   #e6f4ea;
+    --serif:        'Noto Serif', serif;
+    --sans:         'Inter', sans-serif;
+    --label:        'Public Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: var(--surface);
+    background-image:
+      radial-gradient(at 0% 0%,   hsla(217,90%,94%,1) 0, transparent 55%),
+      radial-gradient(at 100% 0%,  hsla(217,60%,90%,1) 0, transparent 55%),
+      radial-gradient(at 100% 100%,hsla(217,30%,96%,1) 0, transparent 55%),
+      radial-gradient(at 0% 100%,  hsla(217,20%,98%,1) 0, transparent 55%);
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 24px;
+    font-family: var(--sans);
+    color: var(--on-surface);
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+
+  /* ── LAYOUT ── */
+  .container {
+    width: 100%; max-width: 1100px;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(9,76,178,0.12), 0 4px 16px rgba(0,0,0,0.06);
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    background: var(--primary);
+    padding: 56px 48px;
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+  }
+  .left-panel::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255,255,255,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(255,255,255,0.05) 0%, transparent 50%);
+  }
+  .left-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 48px; position: relative; z-index: 1;
+  }
+  .brand-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon .material-symbols-outlined {
+    font-size: 22px; color: #fff;
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .brand-name {
+    font-family: var(--serif);
+    font-style: italic; font-size: 22px;
+    color: #fff; font-weight: 500;
+  }
+  .left-headline {
+    font-family: var(--serif);
+    font-size: 36px; font-weight: 400;
+    color: #fff; line-height: 1.2;
+    margin-bottom: 20px;
+    position: relative; z-index: 1;
+  }
+  .left-sub {
+    font-size: 14px; line-height: 1.7;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 40px;
+    position: relative; z-index: 1;
+  }
+  .features { display: flex; flex-direction: column; gap: 20px; position: relative; z-index: 1; }
+  .feature {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 14px 16px; border-radius: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.2s;
+  }
+  .feature:hover { background: rgba(255,255,255,0.1); }
+  .feature-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feature-icon .material-symbols-outlined { font-size: 16px; color: #fff; }
+  .feature-text h4 { font-family: var(--label); font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+  .feature-text p  { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+  .left-footer {
+    margin-top: auto; padding-top: 32px;
+    position: relative; z-index: 1;
+  }
+  .steps { display: flex; gap: 6px; }
+  .step { height: 3px; border-radius: 2px; background: rgba(255,255,255,0.25); }
+  .step.active { background: #fff; width: 28px; }
+  .step:not(.active) { width: 10px; }
+
+  /* ── RIGHT PANEL ── */
+  .right-panel {
+    padding: 48px 52px;
+    overflow-y: auto;
+    max-height: 92vh;
+  }
+  .right-panel::-webkit-scrollbar { width: 4px; }
+  .right-panel::-webkit-scrollbar-thumb { background: var(--outline-var); border-radius: 2px; }
+
+  .form-header { margin-bottom: 32px; }
+  .form-header h2 {
+    font-family: var(--serif);
+    font-size: 28px; font-weight: 400;
+    color: var(--on-surface);
+    margin-bottom: 6px;
+  }
+  .form-header p { font-size: 13px; color: var(--on-surface-v); line-height: 1.5; }
+
+  /* ── ALERT ── */
+  .alert {
+    display: none; padding: 12px 14px; border-radius: 6px;
+    font-size: 13px; align-items: center; gap: 8px;
+    margin-bottom: 20px; font-family: var(--sans);
+  }
+  .alert.show { display: flex; }
+  .alert.error   { background: var(--error-bg);   color: #93000a; border: 1px solid #ffb4ab; }
+  .alert.success { background: var(--success-bg); color: var(--success); border: 1px solid #a8d5b5; }
+  .alert .material-symbols-outlined { font-size: 18px; flex-shrink: 0; }
+
+  /* ── FORM GRID ── */
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .field-row.single { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label {
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--on-surface-v);
+  }
+  .input-wrap { position: relative; }
+  .field-input {
+    width: 100%;
+    background: var(--surface-low);
+    border: 1.5px solid transparent;
+    border-radius: 6px;
+    padding: 11px 14px;
+    font-family: var(--sans); font-size: 13px;
+    color: var(--on-surface); outline: none;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  }
+  .field-input:hover { background: #f0eef0; }
+  .field-input:focus {
+    background: #fff;
+    border-color: var(--primary-mid);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .field-input.has-icon { padding-right: 40px; }
+  .toggle-btn {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--outline); transition: color 0.15s;
+    display: flex; align-items: center;
+  }
+  .toggle-btn:hover { color: var(--primary-mid); }
+  .toggle-btn .material-symbols-outlined { font-size: 18px; }
+
+  /* ── PASSWORD REQUIREMENTS ── */
+  .pw-reqs {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+    padding: 12px 14px; border-radius: 6px;
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    margin-bottom: 16px;
+  }
+  .pw-req {
+    display: flex; align-items: center; gap: 5px;
+    font-family: var(--sans); font-size: 11px;
+    color: var(--outline); transition: color 0.2s;
+  }
+  .pw-req .material-symbols-outlined { font-size: 14px; transition: all 0.2s; }
+  .pw-req.met { color: var(--primary-mid); }
+  .pw-req.met .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 20px 0 16px;
+  }
+  .divider-line { flex: 1; height: 1px; background: var(--outline-var); }
+  .divider-text {
+    font-family: var(--label); font-size: 9px; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--outline);
+  }
+
+  /* ── SUBMIT ── */
+  .submit-btn {
+    width: 100%; padding: 13px 24px; border-radius: 6px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-mid) 100%);
+    border: none; cursor: pointer;
+    font-family: var(--label); font-size: 14px; font-weight: 700;
+    color: var(--on-primary);
+    letter-spacing: 0.04em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 14px rgba(9,76,178,0.25);
+    margin-top: 20px;
+  }
+  .submit-btn:hover { opacity: 0.92; box-shadow: 0 6px 20px rgba(9,76,178,0.3); }
+  .submit-btn:active { transform: scale(0.99); }
+  .submit-btn:disabled { opacity: 0.6; pointer-events: none; }
+  .submit-btn .material-symbols-outlined { font-size: 18px; transition: transform 0.2s; }
+  .submit-btn:hover .material-symbols-outlined { transform: translateX(3px); }
+
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-footer {
+    text-align: center; margin-top: 16px;
+    font-size: 13px; color: var(--on-surface-v);
+    font-family: var(--sans);
+  }
+  .form-footer a {
+    color: var(--primary-mid); font-weight: 600;
+    text-decoration: none; transition: opacity 0.15s;
+  }
+  .form-footer a:hover { opacity: 0.75; text-decoration: underline; }
+
+  .legal {
+    margin-top: 20px; padding-top: 16px;
+    border-top: 1px solid var(--outline-var);
+    font-size: 10px; color: var(--outline);
+    line-height: 1.6; font-family: var(--sans);
+  }
+  .legal a { color: var(--outline); text-decoration: underline; }
+  .legal a:hover { color: var(--on-surface-v); }
+
+  /* ── PROGRESS STEPS ── */
+  .progress { display: flex; align-items: center; gap: 6px; margin-bottom: 28px; }
+  .progress-step {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--label); font-size: 11px; font-weight: 600;
+    color: var(--outline);
+  }
+  .progress-step.active { color: var(--primary-mid); }
+  .progress-step.done   { color: var(--success); }
+  .progress-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--surface-high); border: 1.5px solid var(--outline-var);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700;
+  }
+  .progress-step.active .progress-num { background: var(--primary-mid); border-color: var(--primary-mid); color: #fff; }
+  .progress-step.done   .progress-num { background: var(--success); border-color: var(--success); color: #fff; }
+  .progress-line { flex: 1; height: 1.5px; background: var(--outline-var); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .container { grid-template-columns: 1fr; max-height: none; }
+    .left-panel { display: none; }
+    .right-panel { padding: 36px 24px; max-height: none; }
+    .field-row { grid-template-columns: 1fr; }
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .right-panel { animation: fadeUp 0.4s ease; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ── LEFT PANEL ── -->
+  <div class="left-panel">
+    <div class="brand">
+      <div class="brand-icon">
+        <span class="material-symbols-outlined">sync</span>
+      </div>
+      <span class="brand-name">JI Sync</span>
+    </div>
+
+    <h2 class="left-headline">Bem-vindo à plataforma de colaboração distribuída.</h2>
+    <p class="left-sub">Crie a sua conta e comece a sincronizar documentos em tempo real com a sua equipa.</p>
+
+    <div class="features">
+      <div class="feature">
+        <div class="feature-icon"><span class="material-symbols-outlined">bolt</span></div>
+        <div class="feature-text">
+          <h4>Sincronização em tempo real</h4>
+          <p>Edições propagadas em menos de 50ms para todos os colaboradores.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><span class="material-symbols-outlined">shield</span></div>
+        <div class="feature-text">
+          <h4>Segurança de ponta a ponta</h4>
+          <p>Autenticação JWT e encriptação em todas as comunicações.</p>
+        </div>
+      </div>
+      <div class="feature">
+        <div class="feature-icon"><span class="material-symbols-outlined">history</span></div>
+        <div class="feature-text">
+          <h4>Histórico de versões</h4>
+          <p>Cada alteração é guardada automaticamente. Restaura qualquer versão.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-footer">
+      <div class="steps">
+        <div class="step active"></div>
+        <div class="step"></div>
+        <div class="step"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RIGHT PANEL ── -->
+  <div class="right-panel">
+    <!-- Progress -->
+    <div class="progress">
+      <div class="progress-step active">
+        <div class="progress-num">1</div>
+        <span>Conta</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-num">2</div>
+        <span>Perfil</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-num">3</div>
+        <span>Pronto</span>
+      </div>
+    </div>
+
+    <div class="form-header">
+      <h2>Criar uma conta</h2>
+      <p>Preenche os campos abaixo para começar. Demora menos de um minuto.</p>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert error" id="alertError">
+      <span class="material-symbols-outlined">error</span>
+      <span id="alertErrorText">Ocorreu um erro.</span>
+    </div>
+    <div class="alert success" id="alertSuccess">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span id="alertSuccessText">Conta criada com sucesso!</span>
+    </div>
+
+    <form id="registrationForm">
+      <!-- Name + Email -->
+      <div class="field-row">
+        <div class="field">
+          <label>Nome completo</label>
+          <input id="name" class="field-input" type="text" placeholder="Valtícia Mendes" required/>
+        </div>
+        <div class="field">
+          <label>Endereço eletrónico</label>
+          <input id="email" class="field-input" type="email" placeholder="valticia@ji-sync.io" required/>
+        </div>
+      </div>
+
+      <!-- Passwords -->
+      <div class="field-row">
+        <div class="field">
+          <label>Palavra-passe</label>
+          <div class="input-wrap">
+            <input id="password" class="field-input has-icon" type="password" placeholder="••••••••" required/>
+            <button class="toggle-btn" type="button" onclick="togglePass('password', this)">
+              <span class="material-symbols-outlined">visibility</span>
+            </button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Confirmar palavra-passe</label>
+          <div class="input-wrap">
+            <input id="confirmPassword" class="field-input has-icon" type="password" placeholder="••••••••" required/>
+            <button class="toggle-btn" type="button" onclick="togglePass('confirmPassword', this)">
+              <span class="material-symbols-outlined">visibility</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Password Requirements -->
+      <div class="pw-reqs">
+        <div class="pw-req" id="req-length">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>8+ carácteres</span>
+        </div>
+        <div class="pw-req" id="req-number">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>Um número</span>
+        </div>
+        <div class="pw-req" id="req-special">
+          <span class="material-symbols-outlined">check_circle</span>
+          <span>Carácter especial</span>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">Organização (opcional)</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- Organization + Role -->
+      <div class="field-row">
+        <div class="field">
+          <label>Organização</label>
+          <input id="organization" class="field-input" type="text" placeholder="Acme Corp"/>
+        </div>
+        <div class="field">
+          <label>Função</label>
+          <select id="role" class="field-input" style="cursor:pointer">
+            <option value="" disabled selected>Seleciona a função</option>
+            <option value="dev">Engenheiro Líder</option>
+            <option value="ops">Gerente de DevOps</option>
+            <option value="arch">Arquiteto de Dados</option>
+            <option value="exec">Executivo</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button class="submit-btn" type="submit" id="submitBtn">
+        <span id="btnContent" style="display:flex;align-items:center;gap:8px">
+          Criar conta
+          <span class="material-symbols-outlined">arrow_forward</span>
+        </span>
+      </button>
+
+      <p class="form-footer">
+        Já tem uma conta? <a href="login.html">Iniciar sessão</a>
+      </p>
+
+      <div class="legal">
+        Ao criar uma conta, aceitas os <a href="#">Termos de Serviço</a> e a <a href="#">Política de Privacidade</a> do JI Sync. A tua informação é processada de forma segura e nunca partilhada com terceiros.
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3000';
+
+  // ── PASSWORD REQUIREMENTS ──
+  document.getElementById('password').addEventListener('input', e => {
+    const v = e.target.value;
+    document.getElementById('req-length') .classList.toggle('met', v.length >= 8);
+    document.getElementById('req-number') .classList.toggle('met', /[0-9]/.test(v));
+    document.getElementById('req-special').classList.toggle('met', /[!@#$%^&*(),.?":{}|<>]/.test(v));
+  });
+
+  function togglePass(id, btn) {
+    const el = document.getElementById(id);
+    el.type = el.type === 'password' ? 'text' : 'password';
+    btn.querySelector('span').textContent = el.type === 'password' ? 'visibility' : 'visibility_off';
+  }
+
+  // ── PROGRESS STEPS ──
+  function setStep(step) {
+    document.querySelectorAll('.progress-step').forEach((el, i) => {
+      el.classList.toggle('active', i === step);
+      el.classList.toggle('done',   i < step);
+    });
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.toggle('active', i <= step);
+    });
+  }
+
+  // ── FORM ──
+  document.getElementById('registrationForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    hideAlerts();
+
+    const name            = document.getElementById('name').value.trim();
+    const email           = document.getElementById('email').value.trim();
+    const password        = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const organization    = document.getElementById('organization').value.trim();
+    const role            = document.getElementById('role').value;
+
+    // Validação
+    if (password !== confirmPassword) { showError('As palavras-passe não coincidem.'); return; }
+    if (password.length < 8)          { showError('A palavra-passe deve ter pelo menos 8 carácteres.'); return; }
+    if (!/[0-9]/.test(password))      { showError('A palavra-passe deve conter pelo menos um número.'); return; }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { showError('A palavra-passe deve conter pelo menos um carácter especial.'); return; }
+
+    setLoading(true);
+    setStep(1);
+
+    try {
+      const res = await fetch(`${API}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, confirmPassword, organization: organization || null, role: role || null }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erro ao criar conta.');
+
+      setStep(2);
+      showSuccess(`Conta criada com sucesso! Bem-vindo, ${name}. A redirecionar...`);
+      document.getElementById('registrationForm').style.opacity = '0.5';
+      document.getElementById('registrationForm').style.pointerEvents = 'none';
+
+      setTimeout(() => window.location.href = 'login.html', 2000);
+
+    } catch (err) {
+      setStep(0);
+      showError(err.message || 'Erro de ligação ao servidor.');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // ── HELPERS ──
+  function setLoading(on) {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = on;
+    document.getElementById('btnContent').innerHTML = on
+      ? '<div class="spinner"></div><span>A criar conta...</span>'
+      : 'Criar conta <span class="material-symbols-outlined">arrow_forward</span>';
+  }
+
+  function showError(msg) {
+    document.getElementById('alertErrorText').textContent = msg;
+    document.getElementById('alertError').classList.add('show');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showSuccess(msg) {
+    document.getElementById('alertSuccessText').textContent = msg;
+    document.getElementById('alertSuccess').classList.add('show');
+  }
+
+  function hideAlerts() {
+    document.getElementById('alertError').classList.remove('show');
+    document.getElementById('alertSuccess').classList.remove('show');
+  }
+
+  document.getElementById('name').addEventListener('input',     hideAlerts);
+  document.getElementById('email').addEventListener('input',    hideAlerts);
+  document.getElementById('password').addEventListener('input', hideAlerts);
+
+  if (localStorage.getItem('ji_token')) window.location.href = 'dashboard.html';
+</script>
+</body>
+</html>

@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Editor — JI Sync</title>
+
+<!-- Quill.js -->
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet"/>
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+<!-- Fonts -->
+<link rel="stylesheet" href="/css/global-font.css" />
+
+<style>
+  :root {
+    --primary:        #3366cc;
+    --primary-dim:    #2255bb;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --paper:          #ffffff;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+    --topbar-h:       56px;
+    --toolbar-h:      44px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--surface-low);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    display: flex; flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle; line-height: 1;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 12px;
+    flex-shrink: 0; z-index: 100;
+  }
+
+  .topbar-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+  .topbar-back:hover { background: var(--surface-high); }
+
+  .doc-icon {
+    width: 32px; height: 32px; border-radius: 4px;
+    background: #e8f0fe;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .doc-icon .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+
+  .doc-title-wrap { flex: 1; min-width: 0; }
+  .doc-title {
+    font-family: var(--sans);
+    font-size: 15px; font-weight: 500;
+    color: var(--on-surface);
+    border: none; background: none; outline: none;
+    width: 100%; padding: 4px 6px; border-radius: 4px;
+    transition: background 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-title:hover { background: var(--surface-low); }
+  .doc-title:focus { background: var(--surface-low); }
+  .doc-save-status {
+    font-size: 11px; color: var(--outline);
+    padding: 0 6px; font-family: var(--sans);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .save-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--outline-var);
+    transition: background 0.3s;
+  }
+  .save-dot.saving  { background: #f9a825; }
+  .save-dot.saved   { background: #2e7d32; }
+  .save-dot.unsaved { background: #ba1a1a; }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+  /* Collaborators */
+  .collab-avatars { display: flex; margin-right: 4px; }
+  .collab-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 700;
+    color: #fff; margin-left: -8px; cursor: default;
+    transition: transform 0.15s;
+    position: relative;
+  }
+  .collab-avatar:first-child { margin-left: 0; }
+  .collab-avatar:hover { transform: translateY(-3px) scale(1.1); z-index: 2; }
+  .collab-tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--on-surface); color: var(--surface);
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 11px; white-space: nowrap;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .collab-avatar:hover .collab-tooltip { opacity: 1; }
+
+  .btn-share {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-share:hover { background: var(--primary-dim); }
+
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var); transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── QUILL TOOLBAR OVERRIDE ── */
+  .ql-toolbar.ql-snow {
+    height: var(--toolbar-h);
+    background: var(--paper);
+    border: none;
+    border-bottom: 1px solid var(--outline-var);
+    padding: 4px 16px;
+    display: flex; align-items: center; flex-wrap: nowrap;
+    overflow-x: auto; gap: 2px;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .ql-toolbar.ql-snow::-webkit-scrollbar { display: none; }
+
+  .ql-toolbar.ql-snow .ql-formats { margin-right: 4px; border-right: 1px solid var(--outline-var); padding-right: 6px; }
+  .ql-toolbar.ql-snow .ql-formats:last-child { border-right: none; }
+
+  .ql-toolbar.ql-snow button,
+  .ql-toolbar.ql-snow .ql-picker-label {
+    width: 28px; height: 28px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .ql-toolbar.ql-snow button:hover,
+  .ql-toolbar.ql-snow .ql-picker-label:hover,
+  .ql-toolbar.ql-snow button.ql-active,
+  .ql-toolbar.ql-snow .ql-picker-label.ql-active {
+    background: var(--surface-high) !important;
+    color: var(--primary) !important;
+  }
+  .ql-toolbar.ql-snow button svg,
+  .ql-toolbar.ql-snow .ql-picker-label svg { color: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button.ql-active svg,
+  .ql-toolbar.ql-snow button:hover svg { color: var(--primary); }
+  .ql-toolbar.ql-snow .ql-stroke { stroke: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button:hover .ql-stroke,
+  .ql-toolbar.ql-snow button.ql-active .ql-stroke { stroke: var(--primary); }
+  .ql-toolbar.ql-snow .ql-fill { fill: var(--on-surface-var); }
+  .ql-toolbar.ql-snow button:hover .ql-fill,
+  .ql-toolbar.ql-snow button.ql-active .ql-fill { fill: var(--primary); }
+
+  .ql-snow .ql-picker { color: var(--on-surface-var); font-family: var(--sans); font-size: 13px; }
+  .ql-snow .ql-picker-options { border: 1px solid var(--outline-var); border-radius: 4px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+
+  /* ── EDITOR LAYOUT ── */
+  .editor-layout {
+    display: flex; flex: 1; overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--paper);
+    border-right: 1px solid var(--outline-var);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    transition: width 0.25s ease;
+  }
+  .sidebar.collapsed { width: 0; border-right: none; }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--outline-var); }
+  .sidebar-label {
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--outline); margin-bottom: 10px;
+  }
+  .outline-item {
+    padding: 5px 8px; border-radius: 4px;
+    font-size: 12px; color: var(--on-surface-var);
+    cursor: pointer; transition: background 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .outline-item:hover { background: var(--surface-low); color: var(--primary); }
+  .outline-item.h1 { font-weight: 600; color: var(--on-surface); font-size: 13px; }
+  .outline-item.h2 { padding-left: 16px; }
+  .outline-item.h3 { padding-left: 24px; font-size: 11px; }
+
+  .version-item {
+    padding: 8px; border-radius: 4px; cursor: pointer;
+    transition: background 0.15s; border: 1px solid transparent;
+  }
+  .version-item:hover { background: var(--surface-low); border-color: var(--outline-var); }
+  .version-name { font-size: 12px; font-weight: 500; color: var(--on-surface); }
+  .version-time { font-size: 10px; color: var(--outline); margin-top: 2px; }
+  .version-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding: 16px; }
+
+  /* Page canvas area */
+  .canvas-area {
+    flex: 1; overflow-y: auto;
+    padding: 40px 24px;
+    background: var(--surface-low);
+  }
+
+  /* Paper */
+  .paper {
+    background: var(--paper);
+    width: 100%; max-width: 816px;
+    margin: 0 auto;
+    min-height: calc(100vh - var(--topbar-h) - var(--toolbar-h) - 80px);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.04);
+    padding: 80px 96px;
+    position: relative;
+  }
+
+  /* Quill editor itself */
+  .ql-container.ql-snow { border: none; }
+  .ql-editor {
+    font-family: var(--serif);
+    font-size: 12pt;
+    line-height: 1.8;
+    color: var(--on-surface);
+    min-height: 600px;
+    padding: 0;
+  }
+  .ql-editor p { margin-bottom: 0.6em; }
+  .ql-editor h1 { font-family: var(--serif); font-weight: 600; font-size: 24pt; margin-bottom: 0.4em; line-height: 1.2; }
+  .ql-editor h2 { font-family: var(--serif); font-weight: 500; font-size: 18pt; margin-bottom: 0.4em; }
+  .ql-editor h3 { font-family: var(--serif); font-weight: 500; font-size: 14pt; margin-bottom: 0.3em; }
+  .ql-editor blockquote {
+    border-left: 3px solid var(--primary);
+    margin: 1em 0; padding: 4px 16px;
+    color: var(--on-surface-var);
+    font-style: italic;
+  }
+  .ql-editor.ql-blank::before {
+    font-style: italic;
+    color: var(--outline);
+    font-family: var(--serif);
+  }
+
+  /* ── CURSOR LABELS ── */
+  .remote-cursor {
+    position: absolute;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .remote-cursor-caret {
+    width: 2px; height: 1.2em;
+    display: inline-block;
+  }
+  .remote-cursor-label {
+    position: absolute;
+    top: -20px; left: 0;
+    padding: 2px 6px; border-radius: 2px;
+    font-family: var(--label);
+    font-size: 10px; font-weight: 600;
+    color: #fff; white-space: nowrap;
+  }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    height: 26px;
+    background: var(--primary);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .statusbar-item {
+    font-family: var(--label);
+    font-size: 11px; font-weight: 500;
+    color: rgba(255,255,255,0.8);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .statusbar-item .material-symbols-outlined { font-size: 13px; }
+  .online-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #69f0ae;
+  }
+
+  /* ── SIDEBAR TOGGLE ── */
+  .sidebar-toggle {
+    position: fixed;
+    left: 8px;
+    top: calc(var(--topbar-h) + var(--toolbar-h) + 8px);
+    z-index: 50;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--outline-var);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--outline);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: opacity 0.2s;
+  }
+  .sidebar-toggle:hover { opacity: 0.8; }
+
+  /* ── WORD COUNT CHIP ── */
+  .word-count-chip {
+    position: fixed;
+    bottom: 36px; right: 24px;
+    background: var(--paper);
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    padding: 6px 14px;
+    font-family: var(--label);
+    font-size: 11px; font-weight: 600;
+    color: var(--on-surface-var);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    pointer-events: none;
+  }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; top: calc(var(--topbar-h) + 12px); right: 16px;
+    background: var(--on-surface); color: var(--surface);
+    padding: 10px 18px; border-radius: 4px;
+    font-size: 12px; font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 300; transform: translateX(120%);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    font-family: var(--sans);
+  }
+  .toast.show { transform: translateX(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  .paper { animation: fadeIn 0.3s ease; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .paper { padding: 48px 32px; }
+  }
+  @media (max-width: 600px) {
+    .paper { padding: 32px 20px; }
+    .canvas-area { padding: 16px 8px; }
+    .btn-share span:last-child { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <a class="topbar-back" href="dashboard.html" title="Voltar">
+    <span class="material-symbols-outlined" style="font-size:22px">arrow_back</span>
+  </a>
+
+  <div class="doc-icon">
+    <span class="material-symbols-outlined">article</span>
+  </div>
+
+  <div class="doc-title-wrap">
+    <input class="doc-title" id="docTitle" type="text" value="Relatório de Sistemas Distribuídos" spellcheck="false"/>
+    <div class="doc-save-status">
+      <div class="save-dot saved" id="saveDot"></div>
+      <span id="saveText">Guardado</span>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="collab-avatars" id="collabAvatars"></div>
+
+    <button class="icon-btn" title="Histórico de versões" onclick="toggleSidebar()">
+      <span class="material-symbols-outlined" style="font-size:20px">history</span>
+    </button>
+    <button class="icon-btn" title="Modo de foco" onclick="toggleFocus()">
+      <span class="material-symbols-outlined" style="font-size:20px">fullscreen</span>
+    </button>
+    <button class="btn-share" onclick="shareDoc()">
+      <span class="material-symbols-outlined" style="font-size:16px">person_add</span>
+      <span>Partilhar</span>
+    </button>
+  </div>
+</nav>
+
+<!-- QUILL TOOLBAR (rendered by Quill) -->
+<div id="toolbar">
+  <span class="ql-formats">
+    <select class="ql-header"><option value="1">Título 1</option><option value="2">Título 2</option><option value="3">Título 3</option><option selected>Normal</option></select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-bold"></button>
+    <button class="ql-italic"></button>
+    <button class="ql-underline"></button>
+    <button class="ql-strike"></button>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-color"></select>
+    <select class="ql-background"></select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-list" value="ordered"></button>
+    <button class="ql-list" value="bullet"></button>
+    <button class="ql-indent" value="-1"></button>
+    <button class="ql-indent" value="+1"></button>
+  </span>
+  <span class="ql-formats">
+    <select class="ql-align"></select>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-blockquote"></button>
+    <button class="ql-code-block"></button>
+    <button class="ql-link"></button>
+    <button class="ql-image"></button>
+  </span>
+  <span class="ql-formats">
+    <button class="ql-clean"></button>
+  </span>
+</div>
+
+<!-- SIDEBAR TOGGLE -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Painel lateral">
+  <span class="material-symbols-outlined" style="font-size:14px">menu_open</span>
+</button>
+
+<!-- EDITOR LAYOUT -->
+<div class="editor-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Utilizadores online</div>
+      <div id="onlineUsers" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Índice</div>
+      <div id="outlineList" style="display:flex;flex-direction:column;gap:2px;"></div>
+    </div>
+
+    <div class="sidebar-label" style="padding:16px 16px 0">Versões guardadas</div>
+    <div class="version-list" id="versionList"></div>
+
+    <div style="padding:12px 16px;border-top:1px solid var(--outline-var)">
+      <button onclick="saveVersion()" style="width:100%;padding:8px;background:var(--surface-low);border:1px solid var(--outline-var);border-radius:2px;font-family:var(--label);font-size:12px;font-weight:600;color:var(--on-surface-var);cursor:pointer;transition:background 0.15s;display:flex;align-items:center;justify-content:center;gap:6px;">
+        <span class="material-symbols-outlined" style="font-size:16px">save</span>
+        Guardar versão
+      </button>
+    </div>
+  </aside>
+
+  <!-- CANVAS -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="paper">
+      <div id="editor"></div>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="statusbar-item">
+    <div class="online-dot"></div>
+    <span id="statusOnline">Ligado</span>
+  </div>
+  <div class="statusbar-item">
+    <span class="material-symbols-outlined">sync</span>
+    <span id="statusSync">Sincronizado</span>
+  </div>
+  <div class="statusbar-item" style="margin-left:auto">
+    <span class="material-symbols-outlined">room</span>
+    <span id="statusRoom">—</span>
+  </div>
+</div>
+
+<!-- WORD COUNT -->
+<div class="word-count-chip" id="wordCount">0 palavras</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── URL PARAMS ──
+  const params  = new URLSearchParams(window.location.search);
+  const roomId  = params.get('id') || 'doc-' + Date.now();
+  const token   = localStorage.getItem('ji_token');
+
+  // ── QUILL INIT ──
+  const quill = new Quill('#editor', {
+    theme: 'snow',
+    modules: { toolbar: '#toolbar' },
+    placeholder: 'Começa a escrever o teu documento...',
+  });
+
+  // ── STATE ──
+  let socket        = null;
+  let saveTimer     = null;
+  let isRemoteChange = false;
+  const colors = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#6d4c41'];
+  let myColor = colors[Math.floor(Math.random() * colors.length)];
+  const versions = [];
+
+  // ── SOCKET ──
+  function connectSocket() {
+    if (!token) { showToast('Sem token — modo offline'); return; }
+
+    socket = io('http://localhost:3000', {
+      auth: { token },
+      transports: ['websocket'],
+    });
+
+    socket.on('connect', () => {
+      updateStatus(true);
+      socket.emit('join-room', { roomId, color: myColor });
+      document.getElementById('statusRoom').textContent = roomId;
+    });
+
+    socket.on('disconnect', () => updateStatus(false));
+    socket.on('connect_error', () => updateStatus(false));
+
+    socket.on('init-document', (doc) => {
+      // Só aplica se o editor ainda estiver vazio
+      if (doc.wordHtml && !quill.getText().trim()) {
+        isRemoteChange = true;
+        quill.root.innerHTML = doc.wordHtml;
+        isRemoteChange = false;
+        updateWordCount();
+        updateOutline();
+        setSaveStatus('saved');
+      }
+    });
+
+    socket.on('word-update', (html) => {
+      isRemoteChange = true;
+      const sel = quill.getSelection();
+      quill.root.innerHTML = html;
+      if (sel) quill.setSelection(sel);
+      isRemoteChange = false;
+      updateWordCount();
+      updateOutline();
+    });
+
+    socket.on('users-update', (users) => renderCollabAvatars(users));
+
+    socket.on('cursor-update', ({ user, index, length, color }) => {
+      renderRemoteCursor(user, index, length, color);
+    });
+  }
+
+  // ── EDITOR EVENTS ──
+  quill.on('text-change', (delta, old, source) => {
+    if (source !== 'user' || isRemoteChange) return;
+
+    updateWordCount();
+    updateOutline();
+    setSaveStatus('unsaved');
+
+    // Debounce emit
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (socket) socket.emit('word-change', quill.root.innerHTML);
+      autoSave();
+    }, 500);
+  });
+
+  quill.on('selection-change', (range) => {
+    if (!range || !socket) return;
+    socket.emit('cursor-move', {
+      index: range.index,
+      length: range.length,
+      color: myColor,
+    });
+  });
+
+  // ── SAVE STATUS ──
+  function setSaveStatus(state) {
+    const dot  = document.getElementById('saveDot');
+    const text = document.getElementById('saveText');
+    dot.className = 'save-dot ' + state;
+    text.textContent = state === 'saving' ? 'A guardar...' : state === 'saved' ? 'Guardado' : 'Não guardado';
+  }
+
+  const API   = 'http://localhost:3000';
+
+  async function autoSave() {
+    setSaveStatus('saving');
+    try {
+      await fetch(`${API}/documents/${roomId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ word_html: quill.root.innerHTML }),
+      });
+    } catch (err) {
+      console.warn('[Editor] AutoSave falhou:', err.message);
+    }
+    setSaveStatus('saved');
+  }
+
+  // ── WORD COUNT ──
+  function updateWordCount() {
+    const text  = quill.getText().trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = quill.getText().replace(/\n/g,'').length;
+    document.getElementById('wordCount').textContent = `${words} palavras · ${chars} carácteres`;
+  }
+
+  // ── OUTLINE ──
+  function updateOutline() {
+    const list = document.getElementById('outlineList');
+    const headings = quill.root.querySelectorAll('h1,h2,h3');
+    if (headings.length === 0) { list.innerHTML = '<div style="font-size:11px;color:var(--outline);padding:4px 8px;">Sem títulos</div>'; return; }
+    list.innerHTML = Array.from(headings).map(h => {
+      const level = h.tagName.toLowerCase();
+      return `<div class="outline-item ${level}" onclick="scrollToHeading(this)" data-text="${h.textContent}">${h.textContent}</div>`;
+    }).join('');
+  }
+
+  function scrollToHeading(el) {
+    const text = el.dataset.text;
+    const headings = quill.root.querySelectorAll('h1,h2,h3');
+    for (const h of headings) {
+      if (h.textContent === text) { h.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
+    }
+  }
+
+  // ── VERSIONS ──
+  function saveVersion() {
+    if (socket) socket.emit('create-version');
+    const now = new Date();
+    versions.unshift({ name: `Versão ${versions.length + 1}`, time: now.toLocaleTimeString('pt', {hour:'2-digit',minute:'2-digit'}) });
+    renderVersions();
+    showToast('Versão guardada');
+    setSaveStatus('saved');
+  }
+
+  function renderVersions() {
+    const list = document.getElementById('versionList');
+    if (versions.length === 0) {
+      list.innerHTML = '<div style="font-size:11px;color:var(--outline);padding:8px;">Nenhuma versão guardada</div>';
+      return;
+    }
+    list.innerHTML = versions.map(v => `
+      <div class="version-item">
+        <div class="version-name">${v.name}</div>
+        <div class="version-time">${v.time}</div>
+      </div>`).join('');
+  }
+
+  // ── COLLAB AVATARS ──
+  function renderCollabAvatars(users) {
+    const wrap = document.getElementById('collabAvatars');
+    const online = document.getElementById('onlineUsers');
+    const entries = Object.values(users);
+
+    wrap.innerHTML = entries.slice(0,4).map(u => {
+      const initials = u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div class="collab-avatar" style="background:${u.color}" title="${u.name}">
+        ${initials}<div class="collab-tooltip">${u.name}</div></div>`;
+    }).join('');
+    if (entries.length > 4) wrap.innerHTML += `<div class="collab-avatar" style="background:var(--outline)">+${entries.length-4}</div>`;
+
+    online.innerHTML = entries.map(u => `
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+        <div style="width:8px;height:8px;border-radius:50%;background:${u.color};flex-shrink:0"></div>
+        <span style="font-size:12px;color:var(--on-surface);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.name}</span>
+      </div>`).join('');
+
+    document.getElementById('statusOnline').textContent = `${entries.length} online`;
+  }
+
+  // ── REMOTE CURSORS ──
+  const cursors = {};
+  function renderRemoteCursor(user, index, length, color) {
+    if (cursors[user]) cursors[user].remove();
+    try {
+      const bounds = quill.getBounds(index, length);
+      const paper  = document.querySelector('.paper');
+      const el = document.createElement('div');
+      el.className = 'remote-cursor';
+      el.style.cssText = `left:${bounds.left + 96}px;top:${bounds.top}px`;
+      el.innerHTML = `<div class="remote-cursor-caret" style="background:${color}"></div>
+        <div class="remote-cursor-label" style="background:${color}">${user.split(' ')[0]}</div>`;
+      paper.appendChild(el);
+      cursors[user] = el;
+      setTimeout(() => { if (el.parentNode) el.remove(); }, 3000);
+    } catch(e) {}
+  }
+
+  // ── STATUS ──
+  function updateStatus(online) {
+    const dot  = document.querySelector('.online-dot');
+    const text = document.getElementById('statusSync');
+    dot.style.background = online ? '#69f0ae' : '#f44336';
+    document.getElementById('statusOnline').textContent = online ? 'Ligado' : 'Desligado';
+    text.textContent = online ? 'Sincronizado' : 'Offline';
+  }
+
+  // ── SIDEBAR ──
+  let sidebarOpen = true;
+  function toggleSidebar() {
+    sidebarOpen = !sidebarOpen;
+    document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+  }
+
+  // ── FOCUS MODE ──
+  let focusMode = false;
+  function toggleFocus() {
+    focusMode = !focusMode;
+    document.querySelector('.statusbar').style.display = focusMode ? 'none' : '';
+    document.getElementById('sidebar').style.display = focusMode ? 'none' : '';
+    document.querySelector('.canvas-area').style.background = focusMode ? '#fff' : '';
+    document.querySelector('.paper').style.boxShadow = focusMode ? 'none' : '';
+    showToast(focusMode ? 'Modo de foco activado' : 'Modo de foco desactivado');
+  }
+
+  // ── SHARE ──
+  function shareDoc() {
+    const url = window.location.href;
+    navigator.clipboard?.writeText(url).then(() => showToast('Link copiado para a área de transferência'));
+  }
+
+  // ── DOC TITLE ──
+  document.getElementById('docTitle').addEventListener('blur', function() {
+    document.title = this.value + ' — JI Sync';
+    showToast('Nome do documento actualizado');
+  });
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── KEYBOARD SHORTCUTS ──
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+      e.preventDefault(); saveVersion();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'F') {
+      e.preventDefault(); toggleFocus();
+    }
+  });
+
+  // ── LOAD DOCUMENT FROM API ──
+  async function loadDocument() {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return;
+      const doc = await res.json();
+
+      // Set title
+      if (doc.name) {
+        document.getElementById('docTitle').value = doc.name;
+        document.title = doc.name + ' — JI Sync';
+      }
+
+      // BD é sempre a fonte de verdade — aplica o conteúdo guardado
+      if (doc.word_html) {
+        isRemoteChange = true;
+        quill.root.innerHTML = doc.word_html;
+        isRemoteChange = false;
+        updateWordCount();
+        updateOutline();
+        setSaveStatus('saved');
+      }
+
+      // Load versions
+      const vRes = await fetch(`${API}/documents/${roomId}/versions`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (vRes.ok) {
+        const vData = await vRes.json();
+        vData.forEach(v => versions.push({
+          name: `Versão ${new Date(v.created_at).toLocaleTimeString('pt', {hour:'2-digit', minute:'2-digit'})}`,
+          time: new Date(v.created_at).toLocaleDateString('pt'),
+        }));
+        renderVersions();
+      }
+    } catch (err) {
+      console.warn('[Editor] loadDocument falhou:', err.message);
+    }
+  }
+
+  // ── INIT ──
+  renderVersions();
+  updateOutline();
+  updateWordCount();
+  connectSocket();
+  loadDocument();
+
+  // Documento começa sempre em branco
+</script>
+</body>
+</html>

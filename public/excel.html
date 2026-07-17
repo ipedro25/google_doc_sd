@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Folha de Cálculo | JI Sync</title>
+<!-- Handsontable -->
+<link href="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/handsontable@12.4.0/dist/handsontable.full.min.js"></script>
+
+<!-- Socket.IO -->
+<script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&family=Public+Sans:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<style>
+  :root {
+    --primary:        #1a7340;
+    --primary-dim:    #145c33;
+    --primary-light:  #e6f4ea;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --paper:          #ffffff;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+    --topbar-h:       56px;
+    --sheettab-h:     36px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--surface-low);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    display: flex; flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle; line-height: 1;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    height: var(--topbar-h);
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 12px;
+    flex-shrink: 0; z-index: 500;
+  }
+  .topbar-back {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var); transition: background 0.15s;
+    text-decoration: none; flex-shrink: 0;
+  }
+  .topbar-back:hover { background: var(--surface-high); }
+
+  /* ── WINDOW CONTROLS (minimizar / maximizar / fechar) ── */
+  .window-controls {
+    display: flex; align-items: center;
+    margin-left: 8px; padding-left: 8px;
+    border-left: 1px solid var(--outline-var);
+  }
+  .window-btn {
+    width: 32px; height: 32px; border: none; background: none;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 4px; cursor: pointer; color: var(--outline);
+  }
+  .window-btn:hover { background: var(--surface-high); color: var(--on-surface); }
+  .window-btn.close-btn:hover { background: #e81123; color: #fff; }
+  .doc-icon {
+    width: 32px; height: 32px; border-radius: 4px;
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .doc-icon .material-symbols-outlined { font-size: 18px; color: var(--primary); }
+  .doc-title-wrap { flex: 1; min-width: 0; }
+  .doc-title {
+    font-family: var(--sans); font-size: 15px; font-weight: 500;
+    color: var(--on-surface); border: none; background: none; outline: none;
+    width: 100%; padding: 4px 6px; border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .doc-title:hover, .doc-title:focus { background: var(--surface-low); }
+  .doc-save-status {
+    font-size: 11px; color: var(--outline);
+    padding: 0 6px; font-family: var(--sans);
+    display: flex; align-items: center; gap: 4px;
+  }
+  .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--outline-var); transition: background 0.3s; }
+  .save-dot.saving  { background: #f9a825; }
+  .save-dot.saved   { background: var(--primary); }
+  .save-dot.unsaved { background: #ba1a1a; }
+
+  .topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .collab-avatars { display: flex; margin-right: 4px; }
+  .collab-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 2px solid var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 700;
+    color: #fff; margin-left: -8px; cursor: default;
+    transition: transform 0.15s; position: relative;
+  }
+  .collab-avatar:first-child { margin-left: 0; }
+  .collab-avatar:hover { transform: translateY(-3px) scale(1.1); z-index: 2; }
+
+  .btn-share {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer; transition: background 0.15s;
+  }
+  .btn-share:hover { background: var(--primary-dim); }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var); transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── EXPORT MENU ── */
+  .export-menu-wrap { position: relative; }
+  .export-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 190px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    display: none;
+    padding: 6px;
+    animation: menuIn 0.15s ease;
+  }
+  .export-menu.open { display: block; }
+  .export-menu button {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px; border: none; background: none;
+    border-radius: 6px; cursor: pointer; text-align: left;
+    font-size: 13px; color: var(--on-surface); font-family: var(--sans);
+  }
+  .export-menu button:hover { background: var(--surface-high); }
+  .export-menu .material-symbols-outlined { font-size: 18px; color: var(--outline); }
+
+  /* ── SHARE POPOVER ── */
+  .share-wrap { position: relative; }
+  .share-popover {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    width: 280px; background: var(--paper, #fff);
+    border: 1px solid var(--outline-var); border-radius: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.16);
+    padding: 14px; display: none; z-index: 400;
+  }
+  .share-popover.show { display: block; }
+  .share-popover-title { font-size: 13px; font-weight: 600; color: var(--on-surface); margin-bottom: 10px; }
+  .share-invite-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  .share-invite-row input {
+    flex: 1; min-width: 0; border: 1px solid var(--outline-var); border-radius: 6px;
+    padding: 7px 9px; font-size: 12px; outline: none;
+  }
+  .share-invite-row input:focus { border-color: var(--primary); }
+  .share-invite-row select {
+    border: 1px solid var(--outline-var); border-radius: 6px;
+    font-size: 11px; padding: 0 4px; background: var(--paper); color: var(--on-surface);
+  }
+  .share-invite-btn {
+    width: 100%; padding: 7px; margin-bottom: 10px;
+    background: var(--primary); color: #fff; border: none; border-radius: 6px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .share-invite-btn:hover { opacity: 0.9; }
+  .share-collab-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+  .share-collab-row { display: flex; align-items: center; gap: 8px; }
+  .share-collab-avatar {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff; font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .share-collab-info { flex: 1; min-width: 0; }
+  .share-collab-name { font-size: 12px; font-weight: 500; color: var(--on-surface); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .share-collab-email { font-size: 10px; color: var(--outline); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .share-collab-role { font-size: 9px; color: var(--outline); text-transform: uppercase; letter-spacing: 0.06em; flex-shrink: 0; }
+  .share-collab-row button {
+    border: none; background: none; cursor: pointer; color: var(--outline); flex-shrink: 0;
+    display: flex; padding: 2px; border-radius: 4px;
+  }
+  .share-collab-row button:hover { background: var(--surface-high); color: var(--on-surface); }
+  .share-empty { font-size: 11px; color: var(--outline); padding: 4px 0; }
+  .share-popover-footer { border-top: 1px solid var(--outline-var); margin-top: 10px; padding-top: 8px; }
+  .share-popover-footer button {
+    width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: none; border: none; cursor: pointer; color: var(--outline);
+    font-size: 11px; padding: 6px; border-radius: 6px;
+  }
+  .share-popover-footer button:hover { background: var(--surface-high); color: var(--on-surface); }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── FORMULA BAR ── */
+  .formula-bar {
+    height: 36px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center; gap: 0;
+    flex-shrink: 0;
+  }
+  .cell-ref {
+    width: 80px; flex-shrink: 0;
+    border-right: 1px solid var(--outline-var);
+    height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 12px; font-weight: 600;
+    color: var(--on-surface-var);
+    background: var(--surface-low);
+  }
+  .formula-icon {
+    width: 36px; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    border-right: 1px solid var(--outline-var);
+    color: var(--primary); font-style: italic;
+    font-family: var(--serif); font-size: 14px; font-weight: 600;
+    background: var(--paper);
+  }
+  .formula-input {
+    flex: 1; height: 100%;
+    border: none; outline: none;
+    padding: 0 12px;
+    font-family: var(--sans); font-size: 13px;
+    color: var(--on-surface); background: var(--paper);
+  }
+
+  /* ── TOOLBAR ── */
+  .sheet-toolbar {
+    height: 40px;
+    background: var(--paper);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center;
+    padding: 0 8px; gap: 2px;
+    flex-shrink: 0; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sheet-toolbar::-webkit-scrollbar { display: none; }
+  .toolbar-btn {
+    width: 30px; height: 30px; border-radius: 4px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var); font-size: 13px;
+    transition: background 0.15s; flex-shrink: 0;
+    font-family: var(--sans);
+  }
+  .toolbar-btn:hover { background: var(--surface-high); color: var(--on-surface); }
+  .toolbar-btn.active { background: var(--primary-light); color: var(--primary); }
+  .toolbar-sep {
+    width: 1px; height: 20px;
+    background: var(--outline-var);
+    margin: 0 4px; flex-shrink: 0;
+  }
+  .toolbar-select {
+    height: 28px; border: 1px solid var(--outline-var); border-radius: 4px;
+    background: var(--paper); font-family: var(--sans); font-size: 12px;
+    color: var(--on-surface); padding: 0 6px; outline: none; cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── COLLAB TOOLTIP ── */
+  .collab-tooltip {
+    position: absolute; bottom: calc(100% + 6px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--on-surface); color: var(--surface);
+    padding: 4px 8px; border-radius: 4px;
+    font-size: 11px; white-space: nowrap;
+    pointer-events: none; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .collab-avatar { position: relative; }
+  .collab-avatar:hover .collab-tooltip { opacity: 1; }
+
+  /* ── SIDEBAR (utilizadores online) ── */
+  .sidebar {
+    width: 220px; flex-shrink: 0;
+    background: var(--paper);
+    border-right: 1px solid var(--outline-var);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+    transition: width 0.25s ease;
+  }
+  .sidebar.collapsed { width: 0; border-right: none; overflow: hidden; }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid var(--outline-var); }
+  .sidebar-label {
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--outline); margin-bottom: 10px;
+  }
+  .sidebar-toggle {
+    position: fixed;
+    left: 8px;
+    top: calc(56px + 40px + 8px);
+    z-index: 50;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--paper);
+    border: 1px solid var(--outline-var);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--outline);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .sidebar-toggle:hover { opacity: 0.8; }
+
+  /* ── MODE BANNER ── */
+  .mode-banner {
+    position: fixed;
+    top: calc(56px + 40px + 12px);
+    left: 50%; transform: translateX(-50%);
+    z-index: 200;
+    padding: 10px 20px; border-radius: 24px;
+    font-family: var(--label); font-size: 12px; font-weight: 600;
+    display: none; align-items: center; gap: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  }
+  .mode-banner.view {
+    background: #fff3cd; color: #7c5800;
+    border: 1px solid #f9a825; display: flex;
+  }
+  .mode-banner.blocked {
+    background: #ffdad6; color: #93000a;
+    border: 1px solid #ba1a1a; display: flex;
+  }
+  .mode-banner .material-symbols-outlined { font-size: 16px; }
+
+  /* ── READONLY OVERLAY ── */
+  .readonly-overlay {
+    position: absolute; inset: 0;
+    z-index: 5; cursor: not-allowed;
+    display: none;
+  }
+  .readonly-overlay.active { display: block; }
+
+  /* ── MAIN LAYOUT ── */
+  .main-layout {
+    display: flex; flex: 1; overflow: hidden; min-height: 0;
+  }
+
+  /* ── HANDSONTABLE CONTAINER ── */
+  .hot-wrap {
+    flex: 1; overflow: hidden; position: relative; min-height: 0;
+  }
+  #hot-container {
+    width: 100%; height: 100%;
+  }
+  #hot-container .handsontable {
+    height: 100%;
+  }
+
+  /* Handsontable theme overrides */
+  .handsontable td { font-family: var(--sans); font-size: 12px; }
+  .handsontable th { font-family: var(--label); font-size: 11px; font-weight: 600; background: var(--surface-low); }
+  .handsontable .htCore td.area { background: rgba(26,115,64,0.06); }
+  .handsontable .htCore td.current { outline: 2px solid var(--primary) !important; outline-offset: -2px; }
+  .handsontable .wtBorder.current { background-color: var(--primary) !important; }
+  .handsontable .wtBorder.area { background-color: var(--primary) !important; }
+  .handsontable .colHeader.highlighted,
+  .handsontable .rowHeader.highlighted { background: var(--primary-light) !important; color: var(--primary) !important; }
+  .handsontable .htNoFrame + .htCore td,
+  .handsontable tr:first-child th { border-top: none; }
+
+  /* ── SHEET TABS ── */
+  .sheet-tabs {
+    height: var(--sheettab-h);
+    background: var(--surface-low);
+    border-top: 1px solid var(--outline-var);
+    display: flex; align-items: center;
+    padding: 0 8px; gap: 2px;
+    flex-shrink: 0; overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sheet-tabs::-webkit-scrollbar { display: none; }
+  .sheet-tab {
+    height: 28px; padding: 0 16px; border-radius: 4px 4px 0 0;
+    background: none; border: 1px solid transparent;
+    border-bottom: none;
+    font-family: var(--label); font-size: 12px; font-weight: 600;
+    color: var(--on-surface-var); cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sheet-tab:hover { background: var(--surface-high); color: var(--on-surface); }
+  .sheet-tab.active {
+    background: var(--paper); border-color: var(--outline-var);
+    color: var(--primary);
+  }
+  .tab-close {
+    border-radius: 50%; padding: 1px;
+    opacity: 0; transition: opacity 0.15s, background 0.15s;
+  }
+  .sheet-tab:hover .tab-close { opacity: 0.6; }
+  .tab-close:hover { opacity: 1 !important; background: var(--outline-var); }
+  .sheet-tab-add {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--outline); transition: background 0.15s;
+    margin-left: 4px;
+  }
+  .sheet-tab-add:hover { background: var(--surface-high); color: var(--on-surface); }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    height: 26px;
+    background: var(--primary);
+    display: flex; align-items: center;
+    padding: 0 16px; gap: 16px; flex-shrink: 0;
+  }
+  .statusbar-item {
+    font-family: var(--label); font-size: 11px; font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    display: flex; align-items: center; gap: 5px;
+  }
+  .statusbar-item .material-symbols-outlined { font-size: 13px; }
+  .online-dot { width: 6px; height: 6px; border-radius: 50%; background: #69f0ae; }
+
+  /* ── CONTEXT MENU OVERRIDE ── */
+  .htContextMenu table.htCore td { font-family: var(--sans); font-size: 12px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; top: calc(var(--topbar-h) + 12px); right: 16px;
+    background: var(--on-surface); color: var(--surface);
+    padding: 10px 18px; border-radius: 4px;
+    font-size: 12px; font-weight: 500;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 300; transform: translateX(120%);
+    transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    font-family: var(--sans);
+  }
+  .toast.show { transform: translateX(0); }
+
+  /* ── SELECTION STATS ── */
+  .sel-stats {
+    margin-left: auto; display: flex; gap: 16px;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <div class="doc-icon">
+    <span class="material-symbols-outlined">table_chart</span>
+  </div>
+  <div class="doc-title-wrap">
+    <input class="doc-title" id="docTitle" type="text" value="Análise de Dados — Mestrado" spellcheck="false"/>
+    <div class="doc-save-status">
+      <div class="save-dot saved" id="saveDot"></div>
+      <span id="saveText">Guardado</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="collab-avatars" id="collabAvatars"></div>
+    <div class="export-menu-wrap">
+      <button class="icon-btn" title="Exportar" onclick="toggleExportMenu()">
+        <span class="material-symbols-outlined" style="font-size:20px">download</span>
+      </button>
+      <div class="export-menu" id="exportMenu">
+        <button onclick="exportXLSX()"><span class="material-symbols-outlined">table_chart</span>Excel (.xlsx)</button>
+        <button onclick="exportCSV()"><span class="material-symbols-outlined">description</span>CSV (.csv)</button>
+        <button onclick="exportPDF()"><span class="material-symbols-outlined">picture_as_pdf</span>PDF (.pdf)</button>
+      </div>
+    </div>
+    <button class="icon-btn" title="Estatísticas" onclick="showStats()">
+      <span class="material-symbols-outlined" style="font-size:20px">bar_chart</span>
+    </button>
+    <div class="share-wrap">
+      <button class="btn-share" onclick="toggleSharePopover()">
+        <span class="material-symbols-outlined" style="font-size:16px">person_add</span>
+        <span>Partilhar</span>
+      </button>
+      <div class="share-popover" id="sharePopover">
+        <div class="share-popover-title">Partilhar documento</div>
+        <div class="share-invite-row">
+          <input type="email" id="shareEmailInput" placeholder="email@exemplo.com"/>
+          <select id="shareRoleSelect">
+            <option value="editor">Pode editar</option>
+            <option value="viewer">Só vê</option>
+          </select>
+        </div>
+        <button class="share-invite-btn" onclick="inviteCollaborator()">Convidar</button>
+        <div class="share-collab-list" id="shareCollabList"></div>
+        <div class="share-popover-footer">
+          <button onclick="copyShareLink()">
+            <span class="material-symbols-outlined" style="font-size:14px">link</span>
+            Copiar link
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="window-controls">
+      <button class="window-btn" onclick="minimizeWindow()" title="Minimizar">
+        <span class="material-symbols-outlined" style="font-size:18px">minimize</span>
+      </button>
+      <button class="window-btn" onclick="toggleMaximize()" title="Maximizar">
+        <span class="material-symbols-outlined" style="font-size:18px" id="maximizeIcon">open_in_full</span>
+      </button>
+      <button class="window-btn close-btn" onclick="closeWindow()" title="Fechar">
+        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- SHEET TOOLBAR -->
+<div class="sheet-toolbar">
+  <button class="toolbar-btn" title="Anular" onclick="hot.undo()">
+    <span class="material-symbols-outlined" style="font-size:17px">undo</span>
+  </button>
+  <button class="toolbar-btn" title="Refazer" onclick="hot.redo()">
+    <span class="material-symbols-outlined" style="font-size:17px">redo</span>
+  </button>
+  <div class="toolbar-sep"></div>
+  <select class="toolbar-select" id="fontSizeSelect" onchange="applyFontSize(this.value)">
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12" selected>12</option>
+    <option value="14">14</option>
+    <option value="16">16</option>
+    <option value="18">18</option>
+    <option value="24">24</option>
+  </select>
+  <select class="toolbar-select" title="Formato numérico" onchange="applyNumFormat(this.value)">
+    <option value="">Geral</option>
+    <option value="number">Número</option>
+    <option value="currency">Moeda (Kz)</option>
+    <option value="percent">Percentagem</option>
+  </select>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" id="btnBold"   title="Negrito (Ctrl+B)"   onclick="toggleMeta('bold')">
+    <strong>B</strong>
+  </button>
+  <button class="toolbar-btn" id="btnItalic" title="Itálico (Ctrl+I)"  onclick="toggleMeta('italic')">
+    <em>I</em>
+  </button>
+  <button class="toolbar-btn" id="btnStrike" title="Rasurado"           onclick="toggleMeta('strikethrough')">
+    <s>S</s>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Alinhar à esquerda"  onclick="setAlign('htLeft')">
+    <span class="material-symbols-outlined" style="font-size:17px">format_align_left</span>
+  </button>
+  <button class="toolbar-btn" title="Centrar"             onclick="setAlign('htCenter')">
+    <span class="material-symbols-outlined" style="font-size:17px">format_align_center</span>
+  </button>
+  <button class="toolbar-btn" title="Alinhar à direita"   onclick="setAlign('htRight')">
+    <span class="material-symbols-outlined" style="font-size:17px">format_align_right</span>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Cor de fundo" onclick="document.getElementById('bgPicker').click()">
+    <span class="material-symbols-outlined" style="font-size:17px">format_color_fill</span>
+    <input type="color" id="bgPicker" style="display:none;width:0;height:0" onchange="applyBg(this.value)"/>
+  </button>
+  <button class="toolbar-btn" title="Cor do texto" onclick="document.getElementById('fgPicker').click()">
+    <span class="material-symbols-outlined" style="font-size:17px">format_color_text</span>
+    <input type="color" id="fgPicker" style="display:none;width:0;height:0" onchange="applyFg(this.value)"/>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Inserir linha" onclick="insertRow()">
+    <span class="material-symbols-outlined" style="font-size:17px">add_row_below</span>
+  </button>
+  <button class="toolbar-btn" title="Inserir coluna" onclick="insertCol()">
+    <span class="material-symbols-outlined" style="font-size:17px">add_column_right</span>
+  </button>
+  <button class="toolbar-btn" title="Remover linha" onclick="removeRow()">
+    <span class="material-symbols-outlined" style="font-size:17px">remove</span>
+  </button>
+  <button class="toolbar-btn" title="Remover coluna" onclick="removeCol()">
+    <span class="material-symbols-outlined" style="font-size:17px">delete_sweep</span>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Mesclar/desmesclar células" onclick="toggleMergeCells()">
+    <span class="material-symbols-outlined" style="font-size:17px">table_rows</span>
+  </button>
+  <button class="toolbar-btn" title="Aplicar contorno" onclick="applyBorders()">
+    <span class="material-symbols-outlined" style="font-size:17px">border_all</span>
+  </button>
+  <button class="toolbar-btn" title="Remover contorno" onclick="clearBordersSel()">
+    <span class="material-symbols-outlined" style="font-size:17px">border_clear</span>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" title="Congelar linha de cabeçalho" onclick="toggleFreeze()">
+    <span class="material-symbols-outlined" style="font-size:17px">ac_unit</span>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn btn-save-sheet" title="Guardar (Ctrl+S)" onclick="saveSheet()" style="width:auto;padding:0 12px;gap:5px;background:var(--primary);color:#fff;border-radius:4px;display:flex;align-items:center;">
+    <span class="material-symbols-outlined" style="font-size:16px">save</span>
+    <span style="font-family:var(--label);font-size:12px;font-weight:600;">Guardar</span>
+  </button>
+</div>
+
+<!-- FORMULA BAR -->
+<div class="formula-bar">
+  <div class="cell-ref" id="cellRef">A1</div>
+  <div class="formula-icon">ƒ</div>
+  <input class="formula-input" id="formulaInput" placeholder="Valor ou fórmula..." spellcheck="false"/>
+</div>
+
+<!-- MODE BANNER -->
+<div class="mode-banner" id="modeBanner">
+  <span class="material-symbols-outlined">info</span>
+  <span id="modeBannerText">Modo de leitura activo</span>
+</div>
+
+<!-- SIDEBAR TOGGLE -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Painel lateral">
+  <span class="material-symbols-outlined" style="font-size:14px">menu_open</span>
+</button>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Utilizadores online</div>
+      <div id="onlineUsers" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </aside>
+
+  <div class="hot-wrap">
+    <div class="readonly-overlay" id="readonlyOverlay"></div>
+    <div id="hot-container"></div>
+  </div>
+</div>
+
+<!-- SHEET TABS -->
+<div class="sheet-tabs" id="sheetTabs">
+  <button class="sheet-tab-add" title="Nova folha" onclick="addSheet()">
+    <span class="material-symbols-outlined" style="font-size:16px">add</span>
+  </button>
+</div>
+
+<!-- STATUS BAR -->
+<div class="statusbar">
+  <div class="statusbar-item">
+    <div class="online-dot" id="onlineDot"></div>
+    <span id="statusOnline">Ligado</span>
+  </div>
+  <div class="statusbar-item">
+    <span class="material-symbols-outlined">sync</span>
+    <span id="statusSync">Sincronizado</span>
+  </div>
+  <div class="statusbar-item sel-stats" id="selStats" style="margin-left:auto">
+    <span id="statSum"></span>
+    <span id="statAvg"></span>
+    <span id="statCount"></span>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── URL PARAMS ──
+  const params    = new URLSearchParams(window.location.search);
+  const roomId    = params.get('id') || 'excel-' + Date.now();
+  const token     = localStorage.getItem('ji_token');
+  const returnUrl = params.get('return') ? decodeURIComponent(params.get('return')) : 'dashboard.html';
+
+  // ── SHEETS STATE ── começa sempre em branco
+  const sheets = [{ name: 'Folha 1', data: Array.from({length: 1000}, () => Array(26).fill('')) }];
+  let currentSheet = 0;
+
+  // ── HANDSONTABLE INIT ──
+  function getHotHeight() {
+    return window.innerHeight - (56 + 40 + 36 + 36 + 26);
+  }
+
+  const container = document.getElementById('hot-container');
+  const hot = new Handsontable(container, {
+    data: Array.from({length: 1000}, () => Array(26).fill('')), // começa vazio
+    rowHeaders: true,
+    colHeaders: true,
+    height: getHotHeight(),
+    width: '100%',
+    contextMenu: true,
+    manualColumnResize: true,
+    manualRowResize: true,
+    comments: true,
+    mergeCells: true,
+    customBorders: true,
+    columnSorting: true,
+    search: true,
+    undo: true,
+    outsideClickDeselects: false,
+    minCols: 26,
+    minRows: 1000,
+    minSpareRows: 5,
+    minSpareCols: 2,
+    licenseKey: 'non-commercial-and-evaluation',
+    afterChange(changes, source) {
+      if (source === 'loadData' || source === 'updateData') return;
+      updateFormulaBar();
+      updateSelectionStats();
+      setSaveStatus('unsaved');
+      scheduleEmit();
+    },
+    afterSelectionEnd(r, c) {
+      const colLetter = String.fromCharCode(65 + c);
+      document.getElementById('cellRef').textContent = `${colLetter}${r + 1}`;
+      const val = hot.getDataAtCell(r, c);
+      document.getElementById('formulaInput').value = val !== null ? val : '';
+      updateSelectionStats();
+      updateToolbarState();
+    },
+    cells(row, col) {
+      // Header row style
+      if (row === 0) return { renderer: headerRenderer };
+      return {};
+    },
+  });
+
+  // Dados carregados pelo loadDocument() via API
+
+  // ── HEADER RENDERER ──
+  function headerRenderer(hotInstance, TD, row, col, prop, value) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    TD.style.background = '#e6f4ea';
+    TD.style.color = '#1a7340';
+    TD.style.fontWeight = '600';
+    TD.style.fontFamily = "'Public Sans', sans-serif";
+  }
+
+  function loadSheetData() {
+    if (!hot) return;
+    const d = sheets[currentSheet].data;
+    if (d && d.length) hot.updateData(d);
+  }
+
+  // ── FORMULA BAR SYNC ──
+  document.getElementById('formulaInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const sel = hot.getSelected();
+      if (!sel) return;
+      const [r,,, c] = sel[0];
+      hot.setDataAtCell(r, c, e.target.value);
+      hot.selectCell(r + 1, c);
+    }
+  });
+
+  function updateFormulaBar() {
+    const sel = hot.getSelected();
+    if (!sel) return;
+    const [r,,, c] = sel[0];
+    const colLetter = String.fromCharCode(65 + c);
+    document.getElementById('cellRef').textContent = `${colLetter}${r + 1}`;
+    const val = hot.getDataAtCell(r, c);
+    document.getElementById('formulaInput').value = val !== null ? val : '';
+  }
+
+  // ── SELECTION STATS ──
+  function updateSelectionStats() {
+    const sel = hot.getSelected();
+    if (!sel) return;
+    const [r1, c1, r2, c2] = sel[0];
+    const nums = [];
+    for (let r = Math.min(r1,r2); r <= Math.max(r1,r2); r++) {
+      for (let c = Math.min(c1,c2); c <= Math.max(c1,c2); c++) {
+        const v = parseFloat(hot.getDataAtCell(r, c));
+        if (!isNaN(v)) nums.push(v);
+      }
+    }
+    if (nums.length === 0) { document.getElementById('selStats').style.display = 'none'; return; }
+    document.getElementById('selStats').style.display = 'flex';
+    const sum = nums.reduce((a, b) => a + b, 0);
+    document.getElementById('statSum').textContent   = `Soma: ${sum.toFixed(2)}`;
+    document.getElementById('statAvg').textContent   = `Média: ${(sum/nums.length).toFixed(2)}`;
+    document.getElementById('statCount').textContent = `Contagem: ${nums.length}`;
+  }
+
+  // ── CELL STYLES STORE ──
+  // { "r,c": { bold, italic, strikethrough, align, bg, fg, fontSize } }
+  const cellStyles = {};
+
+  function getCellStyle(r, c) {
+    return cellStyles[`${r},${c}`] || {};
+  }
+  function setCellStyle(r, c, patch) {
+    const key = `${r},${c}`;
+    cellStyles[key] = { ...getCellStyle(r, c), ...patch };
+  }
+
+  // Custom renderer that applies stored styles
+  function styledRenderer(hotInstance, TD, row, col, prop, value, cellProperties) {
+    Handsontable.renderers.TextRenderer.apply(this, arguments);
+    const s = getCellStyle(row, col);
+    TD.style.fontWeight     = s.bold          ? 'bold'        : '';
+    TD.style.fontStyle      = s.italic        ? 'italic'      : '';
+    TD.style.textDecoration = s.strikethrough ? 'line-through': '';
+    TD.style.textAlign      = s.align         || '';
+    TD.style.backgroundColor= s.bg            || '';
+    TD.style.color          = s.fg            || '';
+    TD.style.fontSize       = s.fontSize      ? s.fontSize + 'pt' : '';
+    if (s.numFormat && value !== null && value !== '') {
+      const formatted = formatCellValue(value, s.numFormat);
+      if (formatted !== null) {
+        TD.textContent = formatted;
+        if (!s.align) TD.style.textAlign = 'right';
+      }
+    }
+    // Header row always green
+    if (row === 0) {
+      TD.style.background  = '#e6f4ea';
+      TD.style.color       = '#1a7340';
+      TD.style.fontWeight  = '600';
+      TD.style.fontFamily  = "'Public Sans', sans-serif";
+    }
+  }
+
+  // ── TOOLBAR ACTIONS ──
+  function getSelectedCells() {
+    const sel = hot.getSelected();
+    if (!sel) return [];
+    const cells = [];
+    const [r1, c1, r2, c2] = sel[0];
+    for (let r = Math.min(r1,r2); r <= Math.max(r1,r2); r++)
+      for (let c = Math.min(c1,c2); c <= Math.max(c1,c2); c++)
+        cells.push([r, c]);
+    return cells;
+  }
+
+  function toggleMeta(type) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    // Toggle: if ALL cells have the style, remove it; otherwise apply
+    const allHave = cells.every(([r,c]) => getCellStyle(r,c)[type]);
+    cells.forEach(([r,c]) => setCellStyle(r, c, { [type]: !allHave }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+    // Update toolbar button state
+    const btnMap = { bold: 'btnBold', italic: 'btnItalic', strikethrough: 'btnStrike' };
+    if (btnMap[type]) document.getElementById(btnMap[type])?.classList.toggle('active', !allHave);
+  }
+
+  function setAlign(align) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    cells.forEach(([r,c]) => setCellStyle(r, c, { align }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+  }
+
+  function applyBg(color) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    cells.forEach(([r,c]) => setCellStyle(r, c, { bg: color }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+    showToast('Cor de fundo aplicada');
+  }
+
+  function applyFg(color) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    cells.forEach(([r,c]) => setCellStyle(r, c, { fg: color }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+    showToast('Cor do texto aplicada');
+  }
+
+  function applyFontSize(size) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    cells.forEach(([r,c]) => setCellStyle(r, c, { fontSize: size }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+  }
+
+  // Update toolbar state on selection change
+  function updateToolbarState() {
+    const sel = hot.getSelected();
+    if (!sel) return;
+    const [r, c] = sel[0];
+    const s = getCellStyle(r, c);
+    document.getElementById('btnBold')  ?.classList.toggle('active', !!s.bold);
+    document.getElementById('btnItalic')?.classList.toggle('active', !!s.italic);
+    document.getElementById('btnStrike')?.classList.toggle('active', !!s.strikethrough);
+  }
+  function insertRow() {
+    const sel = hot.getSelected();
+    const row = sel ? sel[0][0] : hot.countRows();
+    hot.alter('insert_row_below', row);
+    showToast('Linha inserida');
+  }
+  function insertCol() {
+    const sel = hot.getSelected();
+    const col = sel ? sel[0][1] : hot.countCols();
+    hot.alter('insert_col_end', col);
+    showToast('Coluna inserida');
+  }
+  function removeRow() {
+    const sel = hot.getSelected();
+    if (!sel) return;
+    hot.alter('remove_row', sel[0][0]);
+    showToast('Linha removida');
+  }
+  function removeCol() {
+    const sel = hot.getSelected();
+    if (!sel) return;
+    hot.alter('remove_col', sel[0][1]);
+    showToast('Coluna removida');
+  }
+
+  function toggleMergeCells() {
+    const range = hot.getSelectedRangeLast();
+    if (!range) return;
+    hot.getPlugin('mergeCells').mergeOrUnmergeSelection(range);
+    showToast('Células mescladas/desmescladas');
+  }
+
+  function selectionToRange() {
+    const range = hot.getSelectedRangeLast();
+    if (!range) return null;
+    return {
+      row:  Math.min(range.from.row, range.to.row),
+      col:  Math.min(range.from.col, range.to.col),
+      row2: Math.max(range.from.row, range.to.row),
+      col2: Math.max(range.from.col, range.to.col),
+    };
+  }
+  function applyBorders() {
+    const range = selectionToRange();
+    if (!range) return;
+    const style = { width: 1, color: '#737784' };
+    hot.getPlugin('customBorders').setBorders([range], { top: style, bottom: style, left: style, right: style });
+    showToast('Contorno aplicado');
+  }
+  function clearBordersSel() {
+    const range = selectionToRange();
+    if (!range) return;
+    hot.getPlugin('customBorders').clearBorders([range]);
+    showToast('Contorno removido');
+  }
+
+  /** Formata o VALOR APRESENTADO (não altera o dado subjacente nem o que aparece ao editar). */
+  function formatCellValue(raw, format) {
+    const num = parseFloat(raw);
+    if (isNaN(num)) return null;
+    if (format === 'currency') return new Intl.NumberFormat('pt-AO', { style: 'currency', currency: 'AOA' }).format(num);
+    if (format === 'percent')  return new Intl.NumberFormat('pt-PT', { style: 'percent', minimumFractionDigits: 2 }).format(num / 100);
+    if (format === 'number')   return new Intl.NumberFormat('pt-PT', { minimumFractionDigits: 2 }).format(num);
+    return null;
+  }
+  function applyNumFormat(format) {
+    const cells = getSelectedCells();
+    if (!cells.length) return;
+    cells.forEach(([r,c]) => setCellStyle(r, c, { numFormat: format || undefined }));
+    hot.updateSettings({ cells: () => ({ renderer: styledRenderer }) });
+    hot.render();
+    showToast(format ? 'Formato numérico aplicado' : 'Formato numérico removido');
+  }
+
+  let frozen = false;
+  function toggleFreeze() {
+    frozen = !frozen;
+    hot.updateSettings({ fixedRowsTop: frozen ? 1 : 0 });
+    showToast(frozen ? 'Cabeçalho congelado' : 'Cabeçalho descongelado');
+  }
+
+  // ── SHEET TABS ──
+  function renderSheetTabs() {
+    const tabs = document.getElementById('sheetTabs');
+    const addBtn = tabs.querySelector('.sheet-tab-add');
+    tabs.querySelectorAll('.sheet-tab').forEach(el => el.remove());
+    sheets.forEach((sheet, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'sheet-tab' + (idx === currentSheet ? ' active' : '');
+      btn.id = `tab-${idx}`;
+      btn.onclick = () => switchSheet(idx);
+      btn.ondblclick = () => renameSheet(idx);
+      btn.innerHTML = `
+        <span class="material-symbols-outlined" style="font-size:14px">table_chart</span>
+        <span class="tab-label" id="tab-label-${idx}">${sheet.name}</span>
+        ${sheets.length > 1 ? `<span class="material-symbols-outlined tab-close" title="Eliminar folha" onclick="event.stopPropagation();deleteSheet(${idx})" style="font-size:14px">close</span>` : ''}`;
+      tabs.insertBefore(btn, addBtn);
+    });
+  }
+
+  function switchSheet(idx) {
+    sheets[currentSheet].data = hot.getData();
+    currentSheet = idx;
+    document.querySelectorAll('.sheet-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+    hot.loadData(sheets[idx].data);
+  }
+
+  function addSheet() {
+    sheets[currentSheet].data = hot.getData();
+    const idx = sheets.length;
+    const name = `Folha ${idx + 1}`;
+    sheets.push({ name, data: Array.from({length: 1000}, () => Array(26).fill('')) });
+    currentSheet = idx;
+    renderSheetTabs();
+    hot.loadData(sheets[idx].data);
+    scheduleEmit();
+    showToast(`"${name}" criada`);
+  }
+
+  function deleteSheet(idx) {
+    if (sheets.length <= 1) return;
+    if (!confirm(`Eliminar "${sheets[idx].name}"? Esta acção não pode ser desfeita.`)) return;
+
+    sheets.splice(idx, 1);
+    if (currentSheet >= sheets.length) currentSheet = sheets.length - 1;
+    if (currentSheet === idx && idx < sheets.length) {
+      // a folha activa era a que foi removida — mantém o mesmo índice, agora ocupado pela seguinte
+    }
+    renderSheetTabs();
+    hot.loadData(sheets[currentSheet].data);
+    scheduleEmit();
+    showToast('Folha eliminada');
+  }
+
+  function renameSheet(idx) {
+    const label = document.getElementById(`tab-label-${idx}`);
+    if (!label) return;
+
+    const current = sheets[idx].name;
+    const input   = document.createElement('input');
+    input.value   = current;
+    input.style.cssText = 'width:80px;border:none;outline:none;background:transparent;font-family:var(--label);font-size:12px;font-weight:600;color:var(--primary);';
+
+    label.replaceWith(input);
+    input.focus();
+    input.select();
+
+    function commit() {
+      const newName = input.value.trim() || current;
+      sheets[idx].name = newName;
+      renderSheetTabs();
+      scheduleEmit();
+      showToast(`Folha renomeada para "${newName}"`);
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter')  { input.blur(); }
+      if (e.key === 'Escape') { input.value = current; input.blur(); }
+    });
+  }
+
+  // ── EXPORT ──
+  function toggleExportMenu() { document.getElementById('exportMenu').classList.toggle('open'); }
+  function closeExportMenu() { document.getElementById('exportMenu').classList.remove('open'); }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('exportMenu');
+    const wrap = document.querySelector('.export-menu-wrap');
+    if (menu.classList.contains('open') && wrap && !wrap.contains(e.target)) closeExportMenu();
+  });
+
+  function getDocName() {
+    return (document.getElementById('docTitle').value || 'documento').trim().replace(/\s+/g, '_');
+  }
+
+  /** Remove linhas/colunas vazias no final, para não exportar a folha toda (1000x26) em branco. */
+  function trimTrailingEmpty(data) {
+    let lastRow = data.length - 1;
+    while (lastRow >= 0 && data[lastRow].every(c => c === '' || c == null)) lastRow--;
+    let lastCol = 0;
+    for (let r = 0; r <= lastRow; r++) {
+      for (let c = data[r].length - 1; c >= 0; c--) {
+        if (data[r][c] !== '' && data[r][c] != null) { lastCol = Math.max(lastCol, c); break; }
+      }
+    }
+    if (lastRow < 0) return [['']];
+    return data.slice(0, lastRow + 1).map(row => row.slice(0, lastCol + 1));
+  }
+
+  function exportCSV() {
+    closeExportMenu();
+    const plugin = hot.getPlugin('exportFile');
+    plugin.downloadFile('csv', {
+      bom: false, columnDelimiter: ',', columnHeaders: false,
+      exportHiddenColumns: true, exportHiddenRows: true,
+      fileExtension: 'csv', filename: getDocName(),
+      mimeType: 'text/csv', rowDelimiter: '\r\n', rowHeaders: false,
+    });
+    showToast('Ficheiro CSV exportado');
+  }
+
+  function exportXLSX() {
+    closeExportMenu();
+    try {
+      sheets[currentSheet].data = hot.getData(); // sincroniza a folha visível antes de exportar
+      const wb = XLSX.utils.book_new();
+      const usedNames = new Set();
+      sheets.forEach((sheet) => {
+        const data = trimTrailingEmpty(sheet.data);
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        let name = (sheet.name || 'Folha').substring(0, 31); // limite do Excel
+        while (usedNames.has(name)) name = (name + '_').substring(0, 31);
+        usedNames.add(name);
+        XLSX.utils.book_append_sheet(wb, ws, name);
+      });
+      XLSX.writeFile(wb, `${getDocName()}.xlsx`);
+      showToast('Ficheiro Excel exportado');
+    } catch (err) {
+      console.error('[Export] xlsx falhou:', err);
+      showToast('Erro ao exportar para Excel');
+    }
+  }
+
+  function exportPDF() {
+    closeExportMenu();
+    try {
+      const data = trimTrailingEmpty(hot.getData());
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: data[0].length > 10 ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+      doc.setFontSize(12);
+      doc.text(document.getElementById('docTitle').value || 'Documento', 14, 12);
+      doc.autoTable({ body: data, startY: 18, styles: { fontSize: 7, cellPadding: 1.5 }, theme: 'grid' });
+      doc.save(`${getDocName()}.pdf`);
+      showToast('Ficheiro PDF exportado');
+    } catch (err) {
+      console.error('[Export] pdf falhou:', err);
+      showToast('Erro ao exportar para PDF');
+    }
+  }
+
+  // ── STATS ──
+  function showStats() {
+    const data = hot.getData();
+    let nums = [];
+    data.forEach(row => row.forEach(cell => { const v = parseFloat(cell); if (!isNaN(v)) nums.push(v); }));
+    if (!nums.length) { showToast('Sem dados numéricos'); return; }
+    const sum = nums.reduce((a,b) => a+b, 0);
+    showToast(`${nums.length} valores · Soma: ${sum.toFixed(2)} · Média: ${(sum/nums.length).toFixed(2)}`);
+  }
+
+  // ── SAVE ──
+  const API = 'http://localhost:3000';
+
+  /** Junta o estado actual de todas as folhas (sincroniza a activa com o Handsontable primeiro). */
+  function buildSheetsPayload() {
+    sheets[currentSheet].data = hot.getData();
+    return {
+      sheets: sheets.map(s => ({ name: s.name, data: s.data })),
+      activeSheet: currentSheet,
+    };
+  }
+
+  async function saveSheet() {
+    const payload = buildSheetsPayload();
+    setSaveStatus('saving');
+    if (socket) socket.emit('excel-change', payload);
+    try {
+      await fetch(`${API}/documents/${roomId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ excel_data: payload }),
+      });
+    } catch (err) {
+      console.warn('[Excel] Save falhou:', err.message);
+    }
+    setSaveStatus('saved');
+    showToast('Folha guardada com sucesso');
+  }
+
+  function setSaveStatus(state) {
+    const dot  = document.getElementById('saveDot');
+    const text = document.getElementById('saveText');
+    dot.className = 'save-dot ' + state;
+    text.textContent = state === 'saving' ? 'A guardar...' : state === 'saved' ? 'Guardado' : 'Não guardado';
+  }
+  let emitTimer = null;
+  function scheduleEmit() {
+    clearTimeout(emitTimer);
+    emitTimer = setTimeout(() => {
+      const payload = buildSheetsPayload();
+      if (socket) socket.emit('excel-change', payload);
+      setSaveStatus('saving');
+      setTimeout(() => setSaveStatus('saved'), 600);
+    }, 600);
+  }
+
+  // ── SOCKET ──
+  let socket = null;
+  const collabColors = ['#e53935','#8e24aa','#1e88e5','#00897b','#f4511e','#6d4c41','#1a7340','#c2185b'];
+  const myColor = collabColors[Math.floor(Math.random() * collabColors.length)];
+
+  /**
+   * Actualiza só as células que mudaram na folha visível (em vez de recarregar
+   * tudo com hot.loadData) — preserva a selecção actual e reduz conflitos
+   * quando duas pessoas editam ao mesmo tempo.
+   */
+  function applyDiffToVisibleSheet(data) {
+    if (!data || !data.length) return;
+    const current = hot.getSourceData();
+    const changes = [];
+    for (let r = 0; r < data.length; r++) {
+      const row = data[r] || [];
+      for (let c = 0; c < row.length; c++) {
+        const incoming = row[c];
+        const existing = current[r] ? current[r][c] : undefined;
+        if (incoming !== existing) changes.push([r, c, incoming]);
+      }
+    }
+    // source 'loadData' é ignorado pelo afterChange, evita reenviar em loop
+    if (changes.length) hot.setDataAtCell(changes, 'loadData');
+    sheets[currentSheet].data = data;
+    setSaveStatus('saved');
+  }
+
+  function connectSocket() {
+    if (!token) return;
+    socket = io('http://localhost:3000', { auth: { token }, transports: ['websocket'] });
+    socket.on('connect', () => {
+      updateStatus(true);
+      socket.emit('join-room', { roomId, color: myColor });
+    });
+    socket.on('disconnect', () => updateStatus(false));
+    socket.on('access-denied', ({ message }) => {
+      alert(message || 'Não tens acesso a este documento.');
+      window.location.href = returnUrl;
+    });
+    socket.on('init-document', (doc) => {
+      const raw = doc.excelData;
+      if (!raw) return;
+      if (Array.isArray(raw) && raw.length) {
+        // Formato antigo: um único grid solto
+        hot.loadData(raw);
+      } else if (raw.sheets && raw.sheets.length) {
+        sheets.length = 0;
+        raw.sheets.forEach(s => sheets.push({
+          name: s.name || `Folha ${sheets.length + 1}`,
+          data: (s.data && s.data.length) ? s.data : Array.from({length: 1000}, () => Array(26).fill('')),
+        }));
+        currentSheet = Math.min(raw.activeSheet || 0, sheets.length - 1);
+        renderSheetTabs();
+        hot.loadData(sheets[currentSheet].data);
+      }
+    });
+    socket.on('excel-update', (payload) => {
+      if (!payload) return;
+
+      // Compatibilidade com o formato antigo (um único array de células)
+      if (Array.isArray(payload)) {
+        applyDiffToVisibleSheet(payload);
+        return;
+      }
+      if (!payload.sheets || !payload.sheets.length) return;
+
+      const namesOrCountChanged =
+        payload.sheets.length !== sheets.length ||
+        payload.sheets.some((s, i) => sheets[i] && s.name !== sheets[i].name);
+
+      payload.sheets.forEach((incoming, idx) => {
+        if (idx === currentSheet) {
+          // Aplica só a diferença na folha que está a ser vista, para preservar
+          // a selecção local e não interromper quem está a editar (ver excel.js).
+          applyDiffToVisibleSheet(incoming.data);
+        } else {
+          // Folhas que não estão à vista podem ser substituídas por inteiro
+          sheets[idx] = sheets[idx] || { name: incoming.name, data: incoming.data };
+          sheets[idx].data = incoming.data;
+          sheets[idx].name = incoming.name;
+        }
+      });
+
+      if (namesOrCountChanged) renderSheetTabs();
+    });
+    socket.on('users-update', (data) => {
+      if (data.users) renderCollabAvatars(data.users, data.viewers || {});
+      else renderCollabAvatars(data, {});
+    });
+    socket.on('join-mode', ({ mode, message, editors, viewers }) => {
+      if (mode === 'view') {
+        setReadOnly(true);
+        showModeBanner('view', message || `Modo leitura — ${editors} editores, ${viewers} leitores`);
+      } else {
+        setReadOnly(false);
+      }
+    });
+    socket.on('room-blocked', ({ message }) => {
+      setReadOnly(true);
+      showModeBanner('blocked', message);
+      showToast('Documento lotado — apenas leitura disponível');
+    });
+    socket.on('edit-denied', ({ message }) => {
+      showToast(message);
+    });
+  }
+
+  function updateStatus(online) {
+    document.getElementById('onlineDot').style.background  = online ? '#69f0ae' : '#f44336';
+    document.getElementById('statusOnline').textContent    = online ? 'Ligado' : 'Desligado';
+    document.getElementById('statusSync').textContent      = online ? 'Sincronizado' : 'Offline';
+  }
+
+  function renderCollabAvatars(users, viewers = {}) {
+    const wrap = document.getElementById('collabAvatars');
+    const editors  = Object.values(users || {});
+    const viewersList = Object.values(viewers || {});
+    const all = [...editors, ...viewersList];
+
+    wrap.innerHTML = all.slice(0,4).map(u => {
+      const initials = u.name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+      return `<div class="collab-avatar" style="background:${u.color}" title="${u.name}">
+        ${initials}<div class="collab-tooltip">${u.name}</div></div>`;
+    }).join('');
+    if (all.length > 4) wrap.innerHTML += `<div class="collab-avatar" style="background:var(--outline)">+${all.length-4}</div>`;
+
+    const online = document.getElementById('onlineUsers');
+    const editLabel = editors.length      ? `<div class="sidebar-label" style="margin-top:4px">Editores (${editors.length})</div>` : '';
+    const viewLabel = viewersList.length  ? `<div class="sidebar-label" style="margin-top:8px">Leitores (${viewersList.length})</div>` : '';
+    online.innerHTML =
+      editLabel + editors.map(u => userRow(u, false)).join('') +
+      viewLabel + viewersList.map(u => userRow(u, true)).join('');
+
+    document.getElementById('statusOnline').textContent = `${editors.length} editores · ${viewersList.length} leitores`;
+  }
+
+  function userRow(u, isViewer) {
+    return `<div style="display:flex;align-items:center;gap:8px;padding:4px 8px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${u.color};flex-shrink:0"></div>
+      <span style="font-size:12px;color:var(--on-surface);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.name}</span>
+      ${isViewer ? '<span style="font-size:9px;background:#fff3cd;color:#7c5800;padding:1px 6px;border-radius:8px;font-weight:600">LEITOR</span>' : ''}
+    </div>`;
+  }
+
+  let sidebarOpen = true;
+  function toggleSidebar() {
+    sidebarOpen = !sidebarOpen;
+    document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+  }
+
+  function showModeBanner(type, message) {
+    const banner = document.getElementById('modeBanner');
+    banner.className = `mode-banner ${type}`;
+    document.getElementById('modeBannerText').textContent = message;
+    setTimeout(() => banner.style.opacity = '0.3', 8000);
+  }
+
+  function setReadOnly(readonly) {
+    document.getElementById('readonlyOverlay').classList.toggle('active', readonly);
+    hot.updateSettings({ readOnly: readonly });
+    document.querySelector('.sheet-toolbar').style.opacity = readonly ? '0.4' : '1';
+    document.querySelector('.sheet-toolbar').style.pointerEvents = readonly ? 'none' : '';
+  }
+
+  // ── WINDOW CONTROLS ──
+  function minimizeWindow() { window.location.href = returnUrl; }
+  function closeWindow()    { window.location.href = returnUrl; }
+
+  function toggleMaximize() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    document.getElementById('maximizeIcon').textContent =
+      document.fullscreenElement ? 'close_fullscreen' : 'open_in_full';
+  });
+
+  // ── SHARE ──
+  function toggleSharePopover() {
+    const popover = document.getElementById('sharePopover');
+    if (popover.classList.contains('show')) { popover.classList.remove('show'); return; }
+    popover.classList.add('show');
+    loadCollaborators();
+  }
+  document.addEventListener('click', (e) => {
+    const popover = document.getElementById('sharePopover');
+    const wrap = document.querySelector('.share-wrap');
+    if (popover.classList.contains('show') && wrap && !wrap.contains(e.target)) popover.classList.remove('show');
+  });
+
+  async function loadCollaborators() {
+    const list = document.getElementById('shareCollabList');
+    list.innerHTML = '<div class="share-empty">A carregar...</div>';
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(await res.text());
+      renderCollaboratorsList(await res.json());
+    } catch (err) {
+      list.innerHTML = '<div class="share-empty">Não foi possível carregar.</div>';
+    }
+  }
+
+  function renderCollaboratorsList(collabs) {
+    const list = document.getElementById('shareCollabList');
+    if (!collabs.length) {
+      list.innerHTML = '<div class="share-empty">Ainda não partilhaste este documento com ninguém.</div>';
+      return;
+    }
+    list.innerHTML = collabs.map(c => {
+      const initials = (c.name || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+      return `
+        <div class="share-collab-row">
+          <div class="share-collab-avatar">${initials}</div>
+          <div class="share-collab-info">
+            <div class="share-collab-name">${c.name}</div>
+            <div class="share-collab-email">${c.email}</div>
+          </div>
+          <span class="share-collab-role">${c.role === 'viewer' ? 'Leitor' : 'Editor'}</span>
+          <button onclick="removeCollaborator('${c.user_id}')" title="Remover acesso">
+            <span class="material-symbols-outlined" style="font-size:15px">close</span>
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  async function inviteCollaborator() {
+    const email = document.getElementById('shareEmailInput').value.trim();
+    const role  = document.getElementById('shareRoleSelect').value;
+    if (!email) return showToast('Introduz um email');
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ email, role }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      document.getElementById('shareEmailInput').value = '';
+      showToast(`Documento partilhado com ${email}`);
+      loadCollaborators();
+    } catch (err) {
+      console.error('[Share] Falhou:', err.message);
+      showToast('Erro ao partilhar — confirma se o email está registado');
+    }
+  }
+
+  async function removeCollaborator(userId) {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}/share/${userId}`, {
+        method: 'DELETE',
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      });
+      if (!res.ok) throw new Error(await res.text());
+      showToast('Acesso removido');
+      loadCollaborators();
+    } catch (err) {
+      showToast('Erro ao remover acesso');
+    }
+  }
+
+  function copyShareLink() {
+    navigator.clipboard?.writeText(window.location.href)
+      .then(() => showToast('Link copiado — só funciona para quem já tem acesso'));
+  }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── KEYBOARD ──
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveSheet(); }
+  });
+
+  // ── DOC TITLE ──
+  document.getElementById('docTitle').addEventListener('blur', function() {
+    document.title = this.value + ' — JI Sync';
+  });
+
+  // ── RESIZE ──
+  window.addEventListener('resize', () => hot.updateSettings({ height: getHotHeight() }));
+
+  // ── LOAD DOCUMENT FROM API ──
+  async function loadDocument() {
+    try {
+      const res = await fetch(`${API}/documents/${roomId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return;
+      const doc = await res.json();
+
+      // Set title
+      if (doc.name) {
+        document.getElementById('docTitle').value = doc.name;
+        document.title = doc.name + ' — JI Sync';
+      }
+
+      // Load excel data
+      if (doc.excel_data) {
+        const raw = typeof doc.excel_data === 'string'
+          ? JSON.parse(doc.excel_data)
+          : doc.excel_data;
+
+        if (Array.isArray(raw) && raw.length) {
+          // Formato antigo: um único grid solto (documentos criados antes desta versão)
+          const base = Array.from({length: 1000}, () => Array(26).fill(''));
+          raw.forEach((row, r) => {
+            if (base[r]) row.forEach((val, c) => { base[r][c] = val ?? ''; });
+          });
+          sheets[0].data = base;
+          renderSheetTabs();
+          hot.loadData(base);
+          setSaveStatus('saved');
+        } else if (raw && raw.sheets && raw.sheets.length) {
+          sheets.length = 0;
+          raw.sheets.forEach(s => {
+            const base = Array.from({length: 1000}, () => Array(26).fill(''));
+            (s.data || []).forEach((row, r) => {
+              if (base[r]) row.forEach((val, c) => { base[r][c] = val ?? ''; });
+            });
+            sheets.push({ name: s.name || `Folha ${sheets.length + 1}`, data: base });
+          });
+          currentSheet = Math.min(raw.activeSheet || 0, sheets.length - 1);
+          renderSheetTabs();
+          hot.loadData(sheets[currentSheet].data);
+          setSaveStatus('saved');
+        }
+      }
+    } catch (err) {
+      console.warn('[Excel] loadDocument falhou:', err.message);
+    }
+  }
+
+  // ── INIT ──
+  renderSheetTabs();
+  connectSocket();
+  loadDocument();
+</script>
+</body>
+</html>

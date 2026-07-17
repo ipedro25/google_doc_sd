@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-br"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Iniciar Sessão | JI Sync</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link rel="stylesheet" href="/css/global-font.css" />
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "tertiary-fixed-dim": "#dcc661","inverse-on-surface": "#f2f0f1","outline-variant": "#c3c6d5","surface-tint": "#2259bf","tertiary-fixed": "#f9e37a","on-error": "#ffffff","primary-fixed-dim": "#b1c5ff","on-tertiary": "#ffffff","on-surface-variant": "#434653","on-secondary": "#ffffff","tertiary-container": "#bfab49","surface-container": "#efedee","error": "#ba1a1a","on-tertiary-fixed": "#211b00","surface-bright": "#faf9fa","on-tertiary-container": "#4a3f00","on-primary-fixed": "#001946","primary-fixed": "#d9e2ff","tertiary": "#6d5e00","surface-container-lowest": "#ffffff","on-secondary-container": "#606569","error-container": "#ffdad6","on-secondary-fixed-variant": "#42474b","inverse-surface": "#303031","surface-container-high": "#e9e8e9","on-background": "#1b1c1d","outline": "#737784","secondary": "#5a5f63","primary": "#094cb2","surface-dim": "#dbdadb","on-primary-fixed-variant": "#00419d","on-surface": "#1b1c1d","on-primary-container": "#e7ebff","inverse-primary": "#b1c5ff","surface-variant": "#e3e2e3","surface-container-low": "#f5f3f4","surface-container-highest": "#e3e2e3","surface": "#faf9fa","secondary-fixed-dim": "#c2c7cc","primary-container": "#3366cc","on-error-container": "#93000a","background": "#faf9fa","on-tertiary-fixed-variant": "#524600","secondary-fixed": "#dfe3e8","secondary-container": "#dfe3e8","on-secondary-fixed": "#171c20","on-primary": "#ffffff"
+                },
+                "borderRadius": {"DEFAULT": "0.125rem","lg": "0.25rem","xl": "0.5rem","full": "0.75rem"},
+                "fontFamily": {"headline": ["Noto Serif"],"display": ["Noto Serif"],"body": ["Inter"],"label": ["Public Sans"]}
+            }
+        }
+    }
+</script>
+<style>
+    .glass-effect { background: rgba(255,255,255,0.8); backdrop-filter: blur(20px); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .bg-mesh {
+        background-color: #faf9fa;
+        background-image:
+            radial-gradient(at 0% 0%, hsla(217,90%,94%,1) 0, transparent 50%),
+            radial-gradient(at 100% 0%, hsla(217,60%,90%,1) 0, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(217,30%,96%,1) 0, transparent 50%),
+            radial-gradient(at 0% 100%, hsla(217,20%,98%,1) 0, transparent 50%);
+    }
+    /* Error message */
+    .error-msg {
+        display: none;
+        background: #ffdad6; color: #93000a;
+        border: 1px solid #ffb4ab;
+        border-radius: 8px; padding: 12px 16px;
+        font-size: 13px; font-family: 'Inter', sans-serif;
+        align-items: center; gap: 8px;
+    }
+    .error-msg.show { display: flex; }
+    /* Loading state */
+    .btn-loading { opacity: 0.7; pointer-events: none; }
+    .spinner {
+        width: 18px; height: 18px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen flex items-center justify-center p-4 lg:p-0 bg-mesh">
+<main class="w-full max-w-6xl flex flex-col lg:flex-row bg-surface-container-lowest rounded-xl overflow-hidden shadow-2xl min-h-[870px]">
+
+  <!-- LEFT SIDE -->
+  <section class="hidden lg:flex w-1/2 relative bg-primary overflow-hidden items-center justify-center p-16">
+    <div class="absolute inset-0 z-0">
+      <img class="w-full h-full object-cover opacity-40 mix-blend-overlay" src="/assets/login-hero.svg" srcset="/assets/login-hero-sm.svg 600w, /assets/login-hero.svg 1200w" sizes="(max-width:640px) 100vw, 50vw"/>
+    </div>
+    <div class="relative z-10 text-white max-w-md">
+      <div class="flex items-center gap-3 mb-12">
+        <span class="material-symbols-outlined text-4xl" style="font-variation-settings:'FILL' 1;">sync</span>
+        <h1 class="font-headline text-3xl font-bold tracking-tight">JI Sync</h1>
+      </div>
+      <h2 class="font-headline text-5xl leading-tight mb-6">Orquestração de dados com autoridade editorial.</h2>
+      <p class="font-body text-primary-fixed-dim text-lg leading-relaxed">Experimente a precisão na sincronização de dados. Onde a clareza encontra o desempenho em uma interface desenhada para a excelência.</p>
+      <div class="mt-12 flex gap-4">
+        <div class="h-1 w-12 bg-white rounded-full"></div>
+        <div class="h-1 w-4 bg-white/30 rounded-full"></div>
+        <div class="h-1 w-4 bg-white/30 rounded-full"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT SIDE -->
+  <section class="w-full lg:w-1/2 p-8 lg:p-20 flex flex-col justify-center">
+    <div class="mb-10 lg:hidden">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings:'FILL' 1;">sync</span>
+        <span class="font-headline text-2xl font-bold text-primary">JI Sync</span>
+      </div>
+    </div>
+
+    <div class="max-w-md w-full mx-auto">
+      <header class="mb-10">
+        <h2 class="font-headline text-4xl text-on-surface mb-2 font-bold tracking-tight">Bem-vindo de volta</h2>
+        <p class="text-on-surface-variant font-body">Acesse sua curadoria de dados e continue sua jornada.</p>
+      </header>
+
+      <!-- ERROR MESSAGE -->
+      <div class="error-msg mb-6" id="errorMsg">
+        <span class="material-symbols-outlined" style="font-size:18px;flex-shrink:0">error</span>
+        <span id="errorText">Nome ou palavra-passe incorrectos.</span>
+      </div>
+
+      <form class="space-y-6" id="loginForm">
+        <!-- Name Input -->
+        <div class="space-y-1.5">
+          <label class="font-label text-xs uppercase tracking-widest text-on-secondary-fixed-variant font-semibold" for="name">Nome de utilizador</label>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl" id="nameIcon">person</span>
+            <input class="w-full pl-12 pr-4 py-4 bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all rounded-lg text-on-surface placeholder:text-outline/50" id="name" name="name" placeholder="O teu nome de utilizador" required type="text"/>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="space-y-1.5">
+          <div class="flex justify-between items-end">
+            <label class="font-label text-xs uppercase tracking-widest text-on-secondary-fixed-variant font-semibold" for="password">Palavra-passe</label>
+            <a class="text-xs font-label uppercase tracking-wider text-primary hover:underline underline-offset-4 transition-all" href="#">Esqueceu a senha?</a>
+          </div>
+          <div class="relative">
+            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl" id="passIcon">lock</span>
+            <input class="w-full pl-12 pr-12 py-4 bg-surface-container-low border-0 focus:ring-2 focus:ring-primary/20 focus:bg-white transition-all rounded-lg text-on-surface placeholder:text-outline/50" id="password" name="password" placeholder="••••••••" required type="password"/>
+            <button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline hover:text-primary transition-colors" type="button" id="togglePass">
+              <span class="material-symbols-outlined">visibility</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="flex items-center gap-3">
+          <input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 cursor-pointer" id="remember" type="checkbox"/>
+          <label class="text-sm text-on-surface-variant cursor-pointer select-none" for="remember">Manter-me conectado por 30 dias</label>
+        </div>
+
+        <!-- Submit -->
+        <button class="w-full py-4 bg-gradient-to-r from-primary to-primary-container text-white font-label font-bold uppercase tracking-widest rounded-lg shadow-lg shadow-primary/20 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 group" type="submit" id="submitBtn">
+          <span id="btnText">Entrar na plataforma</span>
+          <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" id="btnIcon">arrow_forward</span>
+        </button>
+      </form>
+
+      <!-- Footer Link -->
+      <p class="mt-12 text-center text-on-surface-variant text-sm">
+        Não tem uma conta?
+        <a class="text-primary font-bold hover:underline underline-offset-4 ml-1 transition-all" href="register.html">Cadastre-se agora</a>
+      </p>
+    </div>
+
+    <footer class="mt-auto pt-8 border-t border-outline-variant/10 text-center lg:text-left">
+      <p class="font-label text-[10px] uppercase tracking-[0.2em] text-outline">© 2026 JI Sync. Sincronização Inteligente de Documentos.</p>
+    </footer>
+  </section>
+</main>
+
+<script>
+  const API = 'http://localhost:3000';
+
+  // ── INPUT FOCUS ICONS ──
+  document.getElementById('name').addEventListener('focus',  () => document.getElementById('nameIcon').style.color = '#094cb2');
+  document.getElementById('name').addEventListener('blur',   () => document.getElementById('nameIcon').style.color = '#737784');
+  document.getElementById('password').addEventListener('focus', () => document.getElementById('passIcon').style.color = '#094cb2');
+  document.getElementById('password').addEventListener('blur',  () => document.getElementById('passIcon').style.color = '#737784');
+
+  // ── TOGGLE PASSWORD ──
+  document.getElementById('togglePass').addEventListener('click', () => {
+    const input = document.getElementById('password');
+    const icon  = document.querySelector('#togglePass span');
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    icon.textContent = input.type === 'password' ? 'visibility' : 'visibility_off';
+  });
+
+  // ── FORM SUBMIT ──
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name     = document.getElementById('name').value.trim();
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
+
+    // Loading state
+    setLoading(true);
+    hideError();
+
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, password }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || 'Credenciais inválidas');
+      }
+
+      const data = await res.json();
+
+      // Guarda token e utilizador no localStorage
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('ji_token', data.token);
+      localStorage.setItem('ji_token', data.token);
+      localStorage.setItem('ji_user', JSON.stringify({
+        name,
+        initials: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+      }));
+
+      // Redireciona para o dashboard
+      window.location.href = 'dashboard.html';
+
+    } catch (err) {
+      showError(err.message || 'Erro ao iniciar sessão. Tenta novamente.');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // ── HELPERS ──
+  function setLoading(loading) {
+    const btn  = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const icon = document.getElementById('btnIcon');
+    if (loading) {
+      btn.classList.add('btn-loading');
+      text.textContent = 'A entrar...';
+      icon.outerHTML  = '<div class="spinner" id="btnIcon"></div>';
+    } else {
+      btn.classList.remove('btn-loading');
+      text.textContent = 'Entrar na plataforma';
+      const spinner = document.getElementById('btnIcon');
+      if (spinner) spinner.outerHTML = '<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform" id="btnIcon">arrow_forward</span>';
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('errorText').textContent = msg;
+    document.getElementById('errorMsg').classList.add('show');
+  }
+
+  function hideError() {
+    document.getElementById('errorMsg').classList.remove('show');
+  }
+
+  // Limpa erro ao digitar
+  document.getElementById('name').addEventListener('input',     hideError);
+  document.getElementById('password').addEventListener('input', hideError);
+
+  // Se já tiver token, vai directo para o dashboard
+  if (localStorage.getItem('ji_token')) {
+    window.location.href = 'dashboard.html';
+  }
+</script>
+</body></html>

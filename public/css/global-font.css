@@ -1,0 +1,19 @@
+
+/* Try local-generated font-face (created by scripts/download-fonts.ps1). */
+@import url('/css/local-fonts.css');
+
+/* Fallback to Google Fonts if local files are not present. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+:root{
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  --serif: 'Inter', Georgia, 'Times New Roman', serif;
+  --label: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial;
+}
+
+html,body{
+  font-family: var(--sans);
+}
+
+.material-symbols-outlined{font-family:'Material Symbols Outlined';font-variation-settings: 'FILL' 0, 'wght' 400;}

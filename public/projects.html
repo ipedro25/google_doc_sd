@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="pt" class="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<link rel="icon" type="image/png" href="/public/assets/login.png">
+<title>Projectos | JI Sync</title>
+<link rel="stylesheet" href="/css/global-font.css" />
+<style>
+  :root {
+  --primary:       #003289;
+    --primary-dim:     #0D47B5;
+    --on-primary:     #ffffff;
+    --surface:        #faf9fa;
+    --surface-low:    #f5f3f4;
+    --surface-high:   #e9e8e9;
+    --on-surface:     #1b1c1d;
+    --on-surface-var: #434653;
+    --outline:        #737784;
+    --outline-var:    #c3c6d5;
+    --error:          #ba1a1a;
+    --tertiary:       #6d5e00;
+    --serif:          'Noto Serif', serif;
+    --sans:           'Inter', sans-serif;
+    --label:          'Public Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    vertical-align: middle;
+  }
+
+  /* ── TOP BAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(250,249,250,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--outline-var);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 32px; height: 60px;
+  }
+  .topbar-brand {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--on-surface);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .topbar-search {
+    flex: 1; max-width: 520px; margin: 0 auto;
+    position: relative;
+  }
+  .topbar-search input {
+    width: 100%;
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    padding: 9px 16px 9px 42px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .topbar-search input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .topbar-search .search-icon {
+    position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+    color: var(--outline); font-size: 20px; pointer-events: none;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--primary);
+    color: var(--on-primary);
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .avatar:hover { opacity: 0.85; }
+  .icon-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-high); }
+
+  /* ── USER MENU ── */
+  .topbar-actions { position: relative; }
+  .user-menu {
+    position: absolute; top: calc(100% + 8px); right: 0;
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    display: none;
+    animation: menuIn 0.15s ease;
+  }
+  .user-menu.open { display: block; }
+  @keyframes menuIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .user-menu-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px;
+  }
+  .user-menu-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--label); font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .user-menu-name {
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+  }
+  .user-menu-role {
+    font-size: 11px; color: var(--outline);
+    font-family: var(--sans);
+  }
+  .user-menu-divider {
+    height: 1px; background: var(--outline-var); margin: 0 12px;
+  }
+  .user-menu-item {
+    width: 100%; padding: 10px 16px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--sans); font-size: 13px;
+    color: var(--on-surface-var);
+    transition: background 0.15s;
+    text-align: left;
+  }
+  .user-menu-item:last-child { border-radius: 0 0 8px 8px; margin-bottom: 4px; }
+  .user-menu-item:hover { background: var(--surface-low); color: var(--on-surface); }
+  .user-menu-item.danger { color: #ba1a1a; }
+  .user-menu-item.danger:hover { background: #ffdad6; }
+
+  /* ── HERO STRIP ── */
+  .hero {
+    background: var(--primary);
+    padding: 40px 32px 36px;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 24px;
+  }
+  .hero-text h1 {
+    font-family: var(--serif);
+    font-size: 36px; font-weight: 400;
+    color: var(--on-primary);
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    margin-bottom: 8px;
+  }
+  .hero-text p {
+    color: rgba(255,255,255,0.75);
+    font-size: 14px; line-height: 1.5;
+    max-width: 420px;
+  }
+  .hero-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #ffffff;
+    color: var(--primary);
+    border: none; border-radius: 2px;
+    padding: 12px 24px;
+    font-family: var(--label);
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .hero-btn:hover { opacity: 0.92; }
+  .hero-btn:active { transform: scale(0.98); }
+
+  /* ── QUICK NEW ── */
+  .quick-section {
+    padding: 32px 32px 0;
+    border-bottom: 1px solid var(--outline-var);
+    background: var(--surface-low);
+  }
+  .section-label {
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--outline);
+    margin-bottom: 16px;
+  }
+  .quick-grid {
+    display: flex; gap: 12px; overflow-x: auto;
+    padding-bottom: 24px;
+    scrollbar-width: none;
+  }
+  .quick-grid::-webkit-scrollbar { display: none; }
+  .quick-card {
+    flex-shrink: 0;
+    width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 0;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    overflow: hidden;
+    text-align: left;
+  }
+  .quick-card:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    transform: translateY(-2px);
+  }
+  .quick-card-thumb {
+    height: 96px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+  }
+  .quick-card-thumb .material-symbols-outlined {
+    font-size: 36px;
+  }
+  .thumb-word   { background: #e8f0fe; color: #3366cc; }
+  .thumb-excel  { background: #e6f4ea; color: #1a7340; }
+  .thumb-blank  { background: var(--surface-low); color: var(--outline); }
+  .quick-card-label {
+    padding: 10px 12px;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .quick-card-sub {
+    padding: 0 12px 10px;
+    font-size: 11px;
+    color: var(--outline);
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { padding: 32px; flex: 1; }
+
+  .docs-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; gap: 16px; flex-wrap: wrap;
+  }
+  .view-tabs { display: flex; gap: 2px; }
+  .view-tab {
+    background: none; border: none; cursor: pointer;
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--outline);
+    transition: background 0.15s, color 0.15s;
+  }
+  .view-tab.active, .view-tab:hover {
+    background: var(--surface-high);
+    color: var(--on-surface);
+  }
+
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px;
+    border: 1px solid var(--outline-var);
+    border-radius: 24px;
+    background: none;
+    font-family: var(--sans);
+    font-size: 12px; font-weight: 500;
+    color: var(--on-surface-var);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .filter-chip.active, .filter-chip:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
+  }
+
+  /* ── GRID VIEW ── */
+  .docs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .doc-card {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+    position: relative;
+  }
+  .doc-card:hover {
+    box-shadow: 0 6px 24px rgba(0,0,0,0.09);
+    transform: translateY(-2px);
+  }
+  .doc-card:hover .doc-card-actions { opacity: 1; }
+  .doc-preview {
+    height: 130px;
+    display: flex; align-items: center; justify-content: center;
+    border-bottom: 1px solid var(--outline-var);
+    position: relative; overflow: hidden;
+  }
+  .doc-preview-word  { background: #f0f4ff; }
+  .doc-preview-excel { background: #f0f9f2; }
+  .doc-preview-lines {
+    position: absolute; inset: 12px 16px;
+    display: flex; flex-direction: column; gap: 7px;
+  }
+  .doc-line {
+    height: 6px; border-radius: 2px;
+    background: rgba(51,102,204,0.15);
+  }
+  .doc-line-dark { background: rgba(51,102,204,0.28); }
+  .doc-line-short { width: 60%; }
+  .doc-line-med   { width: 80%; }
+  .doc-line-full  { width: 100%; }
+
+  .doc-grid-lines {
+    position: absolute; inset: 8px;
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+    gap: 2px;
+  }
+  .doc-grid-cell {
+    background: rgba(26,115,64,0.12);
+    border-radius: 1px;
+  }
+  .doc-grid-cell.header { background: rgba(26,115,64,0.28); }
+
+  .doc-card-meta {
+    padding: 12px 14px;
+  }
+  .doc-card-name {
+    font-family: var(--sans);
+    font-size: 13px; font-weight: 500;
+    color: var(--on-surface);
+    margin-bottom: 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .doc-card-date {
+    font-size: 11px;
+    color: var(--outline);
+  }
+  .doc-card-editor {
+    font-size: 11px;
+    color: var(--outline);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 4px;
+    margin-top: 2px;
+  }
+  .doc-card-editor .material-symbols-outlined { font-size: 12px; }
+
+  /* ── HISTORY MODAL ── */
+  .history-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--surface-high);
+  }
+  .history-row:last-child { border-bottom: none; }
+  .history-avatar {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--label); font-size: 11px; font-weight: 600;
+  }
+  .history-info { flex: 1; min-width: 0; }
+  .history-name {
+    font-size: 13px; font-weight: 500; color: var(--on-surface);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .history-time { font-size: 11px; color: var(--outline); }
+  .history-empty {
+    text-align: center; padding: 24px 0; color: var(--outline); font-size: 13px;
+  }
+  .doc-type-badge {
+    position: absolute; top: 8px; left: 8px;
+    padding: 2px 8px; border-radius: 2px;
+    font-family: var(--label);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .badge-word  { background: #3366cc; color: #fff; }
+  .badge-excel { background: #1a7340; color: #fff; }
+  .doc-card-actions {
+    position: absolute; top: 8px; right: 8px;
+    opacity: 0; transition: opacity 0.2s;
+    display: flex; gap: 4px;
+  }
+  .doc-action-btn {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--on-surface-var);
+    font-size: 16px;
+    transition: background 0.15s;
+  }
+  .doc-action-btn:hover { background: #fff; color: var(--primary); }
+
+  /* ── LIST VIEW ── */
+  .docs-list { display: none; }
+  .docs-list.active { display: block; }
+  .docs-grid.active { display: grid; }
+  .docs-grid.hidden  { display: none; }
+
+  .list-header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    font-family: var(--label);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--outline);
+  }
+  .list-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 80px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--outline-var);
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .list-row:hover { background: var(--surface-low); }
+  .list-row:last-child { border-bottom: none; }
+  .list-name {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 14px; font-weight: 500;
+    color: var(--on-surface);
+  }
+  .list-icon {
+    width: 36px; height: 36px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .list-icon-word  { background: #e8f0fe; color: #3366cc; }
+  .list-icon-excel { background: #e6f4ea; color: #1a7340; }
+  .list-meta {
+    font-size: 13px; color: var(--on-surface-var);
+  }
+  .list-actions {
+    display: flex; gap: 4px; justify-content: flex-end;
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .list-row:hover .list-actions { opacity: 1; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 80px 32px; text-align: center;
+    color: var(--outline);
+  }
+  .empty-state .material-symbols-outlined { font-size: 64px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-family: var(--serif); font-size: 22px; color: var(--on-surface-var); margin-bottom: 8px; }
+  .empty-state p  { font-size: 14px; max-width: 300px; line-height: 1.6; }
+
+  /* ── CONFIRM MODAL ── */
+  .confirm-modal {
+    text-align: center;
+    max-width: 380px;
+  }
+  .confirm-icon {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: #ffdad6;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .confirm-icon .material-symbols-outlined {
+    font-size: 32px; color: #ba1a1a;
+  }
+  .confirm-modal h2 {
+    font-size: 20px; margin-bottom: 10px;
+  }
+  .confirm-message {
+    font-family: var(--sans);
+    font-size: 14px; color: var(--on-surface-var);
+    line-height: 1.6; margin-bottom: 4px;
+  }
+  .confirm-doc-name {
+    font-family: var(--label);
+    font-size: 13px; font-weight: 600;
+    color: var(--on-surface);
+    background: var(--surface-low);
+    border: 1px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin: 12px 0 0;
+    display: block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .btn-danger {
+    padding: 10px 24px; border-radius: 2px;
+    background: #ba1a1a; border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: #ffffff; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-danger:hover { background: #93000a; }
+  .btn-danger:active { transform: scale(0.98); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 200;
+    background: rgba(27,28,29,0.4);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 8px;
+    width: 100%; max-width: 440px;
+    padding: 32px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.12);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .modal h2 {
+    font-family: var(--serif);
+    font-size: 24px; font-weight: 400;
+    margin-bottom: 24px;
+  }
+  .modal-field { margin-bottom: 20px; }
+  .modal-label {
+    display: block;
+    font-family: var(--label);
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--on-surface-var);
+    margin-bottom: 8px;
+  }
+  .modal-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--outline-var);
+    border-radius: 2px;
+    padding: 12px 14px;
+    font-family: var(--sans);
+    font-size: 14px;
+    color: var(--on-surface);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .modal-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(51,102,204,0.1);
+  }
+  .modal-type-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  }
+  .modal-type-option {
+    border: 2px solid var(--outline-var);
+    border-radius: 4px;
+    padding: 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .modal-type-option:hover { border-color: var(--primary); }
+  .modal-type-option.selected { border-color: var(--primary); background: #f0f4ff; }
+  .modal-type-option .material-symbols-outlined { font-size: 32px; display: block; margin-bottom: 8px; }
+  .modal-type-option.word-opt  .material-symbols-outlined { color: #3366cc; }
+  .modal-type-option.excel-opt .material-symbols-outlined { color: #1a7340; }
+  .modal-type-label { font-size: 13px; font-weight: 500; color: var(--on-surface); }
+  .modal-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 28px; }
+  .btn-ghost {
+    padding: 10px 20px; border-radius: 2px;
+    background: none; border: 1px solid var(--outline-var);
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-surface-var); cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-ghost:hover { background: var(--surface-high); }
+  .btn-primary {
+    padding: 10px 24px; border-radius: 2px;
+    background: var(--primary); border: none;
+    font-family: var(--label); font-size: 13px; font-weight: 600;
+    color: var(--on-primary); cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--primary-dim); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--on-surface); color: var(--surface);
+    padding: 12px 24px; border-radius: 24px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    z-index: 300;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.4s ease both; }
+  .delay-1 { animation-delay: 0.05s; }
+  .delay-2 { animation-delay: 0.10s; }
+  .delay-3 { animation-delay: 0.15s; }
+  .delay-4 { animation-delay: 0.20s; }
+  .delay-5 { animation-delay: 0.25s; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .hero { flex-direction: column; align-items: flex-start; }
+    .topbar-search { display: none; }
+    .docs-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+    .list-header, .list-row { grid-template-columns: 2fr 1fr 60px; }
+    .list-header .col-owner, .list-row .col-owner { display: none; }
+    .main, .quick-section, .hero { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+<style>
+  /* ── PROJECT CARDS ── */
+  .project-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px; padding: 0 32px 48px;
+  }
+  .project-card {
+    background: var(--paper, #fff);
+    border: 1px solid var(--outline-var);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+    display: flex; flex-direction: column; gap: 10px;
+    position: relative;
+  }
+  .project-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08); transform: translateY(-2px); }
+  .project-icon {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dim));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+  }
+  .project-name { font-size: 15px; font-weight: 600; color: var(--on-surface); }
+  .project-desc {
+    font-size: 12px; color: var(--outline);
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; min-height: 32px;
+  }
+  .project-meta {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 11px; color: var(--outline);
+    padding-top: 8px; border-top: 1px solid var(--surface-high);
+  }
+  .project-meta span { display: flex; align-items: center; gap: 4px; }
+  .project-meta .material-symbols-outlined { font-size: 14px; }
+  .project-owner-badge {
+    position: absolute; top: 14px; right: 14px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.06em;
+    color: var(--primary); background: #eef2fc;
+    padding: 2px 8px; border-radius: 10px; text-transform: uppercase;
+  }
+  .project-card-actions {
+    position: absolute; top: 14px; right: 14px;
+    display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s;
+  }
+  .project-card:hover .project-card-actions { opacity: 1; }
+  .project-card:hover .project-owner-badge { opacity: 0; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<nav class="topbar">
+  <a class="topbar-brand" href="dashboard.html">JI Sync</a>
+  <div class="topbar-search">
+    <span class="material-symbols-outlined search-icon">search</span>
+    <input type="text" id="searchInput" placeholder="Pesquisar projectos..." oninput="filterProjects()"/>
+  </div>
+  <div class="topbar-actions">
+    <a class="icon-btn" href="dashboard.html" title="Os meus documentos" style="text-decoration:none;display:flex;align-items:center;justify-content:center">
+      <span class="material-symbols-outlined" style="font-size:20px">description</span>
+    </a>
+    <div class="avatar" title="Perfil" id="avatarBtn" onclick="toggleUserMenu()">VM</div>
+    <div class="user-menu" id="userMenu">
+      <div class="user-menu-header">
+        <div class="user-menu-avatar" id="menuAvatar">VM</div>
+        <div>
+          <div class="user-menu-name" id="menuName">Utilizador</div>
+          <div class="user-menu-role">Membro</div>
+        </div>
+      </div>
+      <div class="user-menu-divider"></div>
+      <button class="user-menu-item" onclick="window.location.href='dashboard.html'">
+        <span class="material-symbols-outlined" style="font-size:18px">description</span>
+        Os meus documentos
+      </button>
+      <button class="user-menu-item danger" onclick="logout()">
+        <span class="material-symbols-outlined" style="font-size:18px">logout</span>
+        Terminar sessão
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero fade-up">
+  <div class="hero-text">
+    <h1>Projectos</h1>
+    <p>Organiza documentos por equipa, cliente ou departamento. Convida colegas para colaborarem dentro de cada projecto.</p>
+  </div>
+  <button class="hero-btn" onclick="openProjectModal()">
+    <span class="material-symbols-outlined" style="font-size:18px">add</span>
+    Novo projecto
+  </button>
+</div>
+
+<!-- PROJECTS GRID -->
+<main class="main">
+  <div class="docs-header fade-up delay-2">
+    <div>
+      <div class="section-label" style="margin-bottom:4px">Os teus projectos</div>
+      <div style="font-size:13px;color:var(--outline)" id="projectCount">0 projectos</div>
+    </div>
+  </div>
+
+  <div class="project-grid fade-up delay-3" id="projectGrid"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none">
+    <span class="material-symbols-outlined">folder_open</span>
+    <h3>Ainda não tens projectos</h3>
+    <p>Cria o primeiro projecto para começares a organizar documentos por equipa.</p>
+  </div>
+</main>
+
+<!-- MODAL NOVO PROJECTO -->
+<div class="modal-overlay" id="projectModalOverlay" onclick="closeProjectModalOutside(event)">
+  <div class="modal" style="max-width:420px">
+    <h2>Novo projecto</h2>
+    <div class="modal-field">
+      <label class="modal-label" for="projectNameInput">Nome do projecto</label>
+      <input class="modal-input" type="text" id="projectNameInput" placeholder="Ex: Cliente Alfa, Marketing 2026..."/>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label" for="projectDescInput">Descrição (opcional)</label>
+      <input class="modal-input" type="text" id="projectDescInput" placeholder="Do que se trata este projecto?"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeProjectModal()">Cancelar</button>
+      <button class="btn-primary" onclick="submitProject()">Criar projecto</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL (eliminar projecto) -->
+<div class="modal-overlay" id="confirmOverlay" onclick="closeConfirmOutside(event)">
+  <div class="modal confirm-modal">
+    <div class="confirm-icon" id="confirmIcon">
+      <span class="material-symbols-outlined">delete</span>
+    </div>
+    <h2 id="confirmTitle">Eliminar projecto</h2>
+    <p id="confirmMessage" class="confirm-message">Tens a certeza?</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeConfirm()">Cancelar</button>
+      <button class="btn-danger" id="confirmBtn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── CONFIG ──
+  const API = 'http://localhost:3000';
+  const token = localStorage.getItem('ji_token');
+  const user  = JSON.parse(localStorage.getItem('ji_user') || '{}');
+
+  if (!token) window.location.href = 'login.html';
+
+  let projects = [];
+
+  // ── API HELPER ──
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(`${API}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  }
+
+  // ── USER MENU ──
+  function initUser() {
+    const initials = (user.initials || (user.name || 'U').substring(0,2)).toUpperCase();
+    document.getElementById('avatarBtn').textContent = initials;
+    document.getElementById('menuAvatar').textContent = initials;
+    document.getElementById('menuName').textContent = user.name || 'Utilizador';
+  }
+  function toggleUserMenu() { document.getElementById('userMenu').classList.toggle('open'); }
+  function logout() {
+    localStorage.removeItem('ji_token');
+    localStorage.removeItem('ji_user');
+    sessionStorage.removeItem('ji_token');
+    window.location.href = 'login.html';
+  }
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('userMenu');
+    const btn  = document.getElementById('avatarBtn');
+    if (menu.classList.contains('open') && !menu.contains(e.target) && e.target !== btn) {
+      menu.classList.remove('open');
+    }
+  });
+
+  // ── LOAD PROJECTS ──
+  async function loadProjects() {
+    try {
+      projects = await apiFetch('/projects');
+      render();
+    } catch (err) {
+      console.error('[Projects] Falha ao carregar:', err.message);
+      showToast('Não foi possível carregar os projectos');
+    }
+  }
+
+  function filterProjects() { render(); }
+
+  function render() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const data = projects.filter(p => p.name.toLowerCase().includes(q));
+
+    document.getElementById('projectCount').textContent =
+      `${projects.length} projecto${projects.length !== 1 ? 's' : ''}`;
+    document.getElementById('emptyState').style.display = data.length ? 'none' : 'flex';
+
+    document.getElementById('projectGrid').innerHTML = data.map(p => `
+      <div class="project-card fade-up" onclick="openProject('${p.id}')">
+        ${p.my_role === 'owner'
+          ? `<div class="project-card-actions">
+               <button class="doc-action-btn" onclick="event.stopPropagation();deleteProject('${p.id}','${(p.name||'').replace(/'/g,"\\'")}')" title="Eliminar projecto">
+                 <span class="material-symbols-outlined" style="font-size:14px">delete</span>
+               </button>
+             </div>
+             <div class="project-owner-badge">Dono</div>`
+          : ''}
+        <div class="project-icon">
+          <span class="material-symbols-outlined">folder</span>
+        </div>
+        <div class="project-name">${p.name}</div>
+        <div class="project-desc">${p.description || 'Sem descrição.'}</div>
+        <div class="project-meta">
+          <span><span class="material-symbols-outlined">group</span>${p.member_count}</span>
+          <span><span class="material-symbols-outlined">description</span>${p.document_count}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  function openProject(id) {
+    window.location.href = `project.html?id=${id}`;
+  }
+
+  // ── NOVO PROJECTO ──
+  function openProjectModal() {
+    document.getElementById('projectNameInput').value = '';
+    document.getElementById('projectDescInput').value = '';
+    document.getElementById('projectModalOverlay').classList.add('open');
+    setTimeout(() => document.getElementById('projectNameInput').focus(), 50);
+  }
+  function closeProjectModal() { document.getElementById('projectModalOverlay').classList.remove('open'); }
+  function closeProjectModalOutside(e) { if (e.target === document.getElementById('projectModalOverlay')) closeProjectModal(); }
+
+  async function submitProject() {
+    const name = document.getElementById('projectNameInput').value.trim();
+    const description = document.getElementById('projectDescInput').value.trim();
+    if (!name) return showToast('O nome do projecto é obrigatório');
+
+    try {
+      await apiFetch('/projects', { method: 'POST', body: JSON.stringify({ name, description }) });
+      closeProjectModal();
+      showToast(`Projecto "${name}" criado`);
+      loadProjects();
+    } catch (err) {
+      console.error('[Projects] Criar falhou:', err.message);
+      showToast('Erro ao criar o projecto');
+    }
+  }
+
+  // ── ELIMINAR PROJECTO ──
+  let confirmCallback = null;
+  function openConfirm({ title, message, confirmLabel = 'Confirmar', onConfirm }) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMessage').textContent = message;
+    const btn = document.getElementById('confirmBtn');
+    btn.textContent = confirmLabel;
+    confirmCallback = onConfirm;
+    btn.onclick = () => { closeConfirm(); if (confirmCallback) confirmCallback(); };
+    document.getElementById('confirmOverlay').classList.add('open');
+  }
+  function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('open'); }
+  function closeConfirmOutside(e) { if (e.target === document.getElementById('confirmOverlay')) closeConfirm(); }
+
+  function deleteProject(id, name) {
+    openConfirm({
+      title: 'Eliminar projecto',
+      message: `Tens a certeza que queres eliminar "${name}"? As pastas e a lista de membros desaparecem. Os documentos NÃO são apagados — voltam a ficar como documentos soltos.`,
+      confirmLabel: 'Eliminar',
+      onConfirm: async () => {
+        try {
+          await apiFetch(`/projects/${id}`, { method: 'DELETE' });
+          projects = projects.filter(p => p.id !== id);
+          render();
+          showToast(`"${name}" eliminado`);
+        } catch (err) {
+          console.error('[Projects] Eliminar falhou:', err.message);
+          showToast('Erro ao eliminar o projecto');
+        }
+      },
+    });
+  }
+
+  // ── TOAST ──
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeProjectModal(); closeConfirm(); }
+  });
+
+  // ── INIT ──
+  initUser();
+  loadProjects();
+</script>
+</body>
+</html>
+<!-- Footer -->
+<footer style="background:var(--surface);border-top:1px solid var(--outline-var);padding:24px 32px;margin-top:24px;">
+  <div style="max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;flex-direction:column;gap:8px;max-width:360px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <img src="/assets/footer-logo.svg" alt="JI SYNC" style="height:32px;filter:grayscale(1);"/>
+        <span style="font-weight:700;color:var(--on-surface);">JI SYNC</span>
+      </div>
+      <p style="color:var(--on-surface-var);margin:0;">A plataforma de sincronização de documentos feita para o futuro do trabalho colaborativo.</p>
+      <p style="color:var(--outline);font-size:12px;margin:0;">© 2026 JI SYNC. Todos os direitos reservados.</p>
+    </div>
+    <div style="display:flex;gap:32px;flex-wrap:wrap;align-items:flex-start;">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Legal</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Privacidade</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Termos de Serviço</a>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <strong style="font-size:12px;color:var(--outline);text-transform:uppercase;">Recursos</strong>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Blog</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Segurança</a>
+        <a href="#" style="color:var(--on-surface-var);text-decoration:none;">Contacto</a>
+      </div>
+    </div>
+  </div>
+</footer>
